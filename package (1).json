@@ -1,0 +1,12 @@
+{
+  "name": "spreadsandsleds",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "sync": "node sync-jobs.js"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.39.0",
+    "@anthropic-ai/sdk": "^0.20.0"
+  }
+}

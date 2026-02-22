@@ -1,0 +1,1167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>FRONT OFFICE // Jobs Board</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0a;
+    --surface: #111111;
+    --border: #222222;
+    --border-light: #2a2a2a;
+    --accent: #f0b429;
+    --accent2: #00d4aa;
+    --text: #e8e8e8;
+    --muted: #555;
+    --dim: #888;
+    --red: #ff4444;
+    --blue: #4a9eff;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 13px;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── TICKER ── */
+  .ticker-wrap {
+    background: var(--accent);
+    overflow: hidden;
+    height: 26px;
+    display: flex;
+    align-items: center;
+    position: relative;
+  }
+  .ticker-track {
+    display: flex;
+    white-space: nowrap;
+    animation: ticker-scroll 60s linear infinite;
+    will-change: transform;
+  }
+  .ticker-track:hover { animation-play-state: paused; }
+  .ticker-item {
+    padding: 0 24px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    font-weight: 600;
+    color: #0a0a0a;
+    letter-spacing: 0.04em;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    cursor: default;
+    border-right: 1px solid rgba(0,0,0,0.15);
+  }
+  .ticker-arrow { font-size: 8px; }
+  .ticker-arrow.up { color: #1a6b3c; }
+  .ticker-arrow.dn { color: #8b2020; }
+  .ticker-pct.up { color: #1a6b3c; }
+  .ticker-pct.dn { color: #8b2020; }
+  @keyframes ticker-scroll {
+    0%   { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+  }
+
+  /* ── HEADER ── */
+  header {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    padding: 16px 32px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    gap: 16px;
+  }
+  .header-meta {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    color: var(--muted);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    line-height: 1.8;
+  }
+  .header-title { text-align: center; }
+  .header-title h1 {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: clamp(14px, 3vw, 22px);
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+  .slash { color: var(--accent); }
+  .header-title p {
+    font-size: 9px;
+    color: var(--muted);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-top: 4px;
+  }
+  .header-right {
+    text-align: right;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 6px;
+  }
+  .live-dot {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    color: var(--accent2);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .live-dot::before {
+    content: '';
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    background: var(--accent2);
+    animation: pulse 1.5s ease-in-out infinite;
+  }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.2; } }
+
+  .btn-primary {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 6px 16px;
+    background: var(--accent);
+    border: none;
+    color: #0a0a0a;
+    cursor: pointer;
+    font-weight: 600;
+    transition: background 0.15s;
+    white-space: nowrap;
+  }
+  .btn-primary:hover { background: #d4a020; }
+
+  /* ── FILTER TABS ── */
+  .filters {
+    display: flex;
+    padding: 0 16px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .filters::-webkit-scrollbar { display: none; }
+  .filter-btn {
+    padding: 11px 16px;
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: var(--muted);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
+  .filter-btn:hover { color: var(--text); }
+  .filter-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  /* ── STATS ── */
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    border-bottom: 1px solid var(--border);
+    overflow-x: auto;
+  }
+  .stat {
+    padding: 14px 20px;
+    border-right: 1px solid var(--border);
+    min-width: 110px;
+  }
+  .stat:last-child { border-right: none; }
+  .stat-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 8px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 4px;
+  }
+  .stat-value {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 18px;
+    font-weight: 600;
+  }
+  .stat-sub { font-size: 9px; color: var(--accent2); margin-top: 2px; font-family: 'IBM Plex Mono', monospace; }
+
+  /* ── MAIN LAYOUT ── */
+  .main {
+    display: grid;
+    grid-template-columns: 230px 1fr;
+    min-height: calc(100vh - 200px);
+  }
+
+  /* ── SIDEBAR ── */
+  .sidebar {
+    border-right: 1px solid var(--border);
+    background: var(--surface);
+  }
+  .sidebar-inner { padding: 20px 0; }
+  .sidebar-section { margin-bottom: 24px; }
+  .sidebar-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 8px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding: 0 16px;
+    margin-bottom: 8px;
+  }
+  .sidebar-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 7px 16px;
+    cursor: pointer;
+    transition: background 0.1s;
+    border-left: 2px solid transparent;
+  }
+  .sidebar-item:hover { background: rgba(240,180,41,0.04); }
+  .sidebar-item.active { background: rgba(240,180,41,0.07); border-left-color: var(--accent); }
+  .sidebar-item-name { font-size: 11px; color: var(--dim); font-family: 'IBM Plex Mono', monospace; }
+  .sidebar-item.active .sidebar-item-name { color: var(--text); }
+  .sidebar-count {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    color: var(--muted);
+    background: var(--border);
+    padding: 2px 6px;
+  }
+  .sidebar-item.active .sidebar-count { background: rgba(240,180,41,0.18); color: var(--accent); }
+
+  .search-wrap { padding: 12px 16px 4px; }
+  .search-input {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border-light);
+    color: var(--text);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    padding: 7px 10px;
+    outline: none;
+    transition: border 0.15s;
+  }
+  .search-input::placeholder { color: var(--muted); }
+  .search-input:focus { border-color: var(--accent); }
+
+  /* ── JOBS ── */
+  .pinned-banner {
+    background: linear-gradient(90deg, rgba(240,180,41,0.07), transparent);
+    border-bottom: 1px solid rgba(240,180,41,0.15);
+    padding: 9px 24px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .pinned-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 8px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+  .pinned-text { font-size: 11px; color: var(--dim); }
+
+  .job-card {
+    border-bottom: 1px solid var(--border);
+    padding: 18px 24px;
+    cursor: pointer;
+    transition: background 0.1s;
+    border-left: 3px solid transparent;
+    animation: fadeIn 0.2s ease;
+  }
+  @keyframes fadeIn { from { opacity:0; transform:translateY(3px); } to { opacity:1; transform:translateY(0); } }
+  .job-card:hover { background: rgba(255,255,255,0.015); }
+  .job-card.featured { border-left-color: var(--accent); }
+  .job-card.isnew { border-left-color: var(--accent2); }
+
+  .job-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 7px;
+  }
+  .job-title { font-size: 14px; font-weight: 600; color: var(--text); flex: 1; line-height: 1.35; }
+  .job-comp {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--accent);
+    font-weight: 600;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .job-meta {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-bottom: 9px;
+  }
+  .job-firm { font-size: 11px; font-weight: 600; color: var(--dim); }
+  .job-loc { font-size: 11px; color: var(--muted); }
+  .sep { color: var(--border-light); font-size: 10px; }
+
+  .tag {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 8px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 2px 7px;
+    border: 1px solid;
+  }
+  .tag-type { border-color: #f0b42930; color: var(--accent); }
+  .tag-level { border-color: #ffffff15; color: var(--muted); }
+  .tag-new { border-color: #00d4aa30; color: var(--accent2); }
+  .tag-hot { border-color: #ff444430; color: var(--red); }
+  .tag-src { border-color: #ffffff10; color: #444; }
+
+  .job-desc { font-size: 12px; color: var(--muted); line-height: 1.65; max-width: 680px; }
+
+  .job-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 12px;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .job-date { font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: var(--muted); }
+
+  .apply-btn {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 6px 14px;
+    background: none;
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    cursor: pointer;
+    transition: all 0.15s;
+    text-decoration: none;
+    display: inline-block;
+  }
+  .apply-btn:hover { background: var(--accent); color: var(--bg); }
+
+  /* Loading / empty states */
+  .state-msg {
+    padding: 60px 24px;
+    text-align: center;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+  }
+  .state-msg .spin {
+    display: inline-block;
+    animation: spin 1s linear infinite;
+    font-size: 18px;
+    margin-bottom: 12px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── SUBMIT MODAL ── */
+  .overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.85);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    backdrop-filter: blur(4px);
+  }
+  .overlay.open { display: flex; }
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border-light);
+    width: 100%;
+    max-width: 540px;
+    max-height: 90vh;
+    overflow-y: auto;
+    animation: modalIn 0.2s ease;
+  }
+  @keyframes modalIn { from { opacity:0; transform:scale(0.97) translateY(6px); } to { opacity:1; transform:scale(1) translateY(0); } }
+  .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 18px 22px;
+    border-bottom: 1px solid var(--border);
+  }
+  .modal-title {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .modal-title span { color: var(--accent); }
+  .modal-close {
+    background: none; border: none; color: var(--muted);
+    font-size: 18px; cursor: pointer; padding: 2px 6px; line-height: 1;
+  }
+  .modal-close:hover { color: var(--text); }
+  .modal-body { padding: 22px; }
+  .modal-footer {
+    padding: 14px 22px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+  }
+
+  .form-row { margin-bottom: 16px; }
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 16px; }
+  label {
+    display: block;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 8px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 5px;
+  }
+  .form-input, .form-select, .form-textarea {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border-light);
+    color: var(--text);
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 12px;
+    padding: 8px 10px;
+    outline: none;
+    transition: border 0.15s;
+    appearance: none;
+    border-radius: 0;
+  }
+  .form-input:focus, .form-select:focus, .form-textarea:focus { border-color: var(--accent); }
+  .form-input::placeholder, .form-textarea::placeholder { color: var(--muted); }
+  .form-select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23555'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    padding-right: 28px;
+    cursor: pointer;
+  }
+  .form-textarea { resize: vertical; min-height: 80px; }
+  .form-hint { font-size: 10px; color: var(--muted); margin-top: 5px; line-height: 1.5; }
+
+  .cancel-btn {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 8px 14px;
+    background: none;
+    border: 1px solid var(--border-light);
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .cancel-btn:hover { color: var(--text); border-color: var(--dim); }
+
+  .success-msg {
+    display: none;
+    text-align: center;
+    padding: 40px 22px;
+  }
+  .success-icon { font-size: 32px; margin-bottom: 12px; }
+  .success-msg h3 {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--accent2);
+    margin-bottom: 8px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .success-msg p { font-size: 12px; color: var(--muted); }
+
+  /* ── MOBILE ── */
+  .mobile-bar {
+    display: none;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+  }
+  .hamburger {
+    background: none;
+    border: 1px solid var(--border-light);
+    color: var(--dim);
+    padding: 6px 12px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    cursor: pointer;
+  }
+  .sidebar-drawer {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 90;
+  }
+  .sidebar-drawer.open { display: block; }
+  .drawer-backdrop { position: absolute; inset: 0; background: rgba(0,0,0,0.7); }
+  .drawer-content {
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: min(270px, 85vw);
+    background: var(--surface);
+    overflow-y: auto;
+    border-right: 1px solid var(--border);
+    animation: slideIn 0.2s ease;
+  }
+  @keyframes slideIn { from { transform: translateX(-100%); } to { transform: translateX(0); } }
+  .drawer-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .drawer-header span {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  /* ── FOOTER ── */
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 14px 32px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--surface);
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  footer p {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    color: var(--muted);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  ::-webkit-scrollbar { width: 3px; height: 3px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border-light); }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 860px) {
+    .main { grid-template-columns: 1fr; }
+    .sidebar { display: none; }
+    .mobile-bar { display: flex; }
+    header { grid-template-columns: auto 1fr; }
+    .header-meta { display: none; }
+    .header-right { flex-direction: row; align-items: center; }
+    .stats-row { grid-template-columns: repeat(3, 1fr); }
+    .stat:nth-child(4), .stat:nth-child(5) { display: none; }
+  }
+  @media (max-width: 560px) {
+    header { padding: 12px 16px; }
+    .header-title h1 { font-size: 15px; }
+    .header-title p { display: none; }
+    .job-card { padding: 14px 16px; }
+    .job-title { font-size: 13px; }
+    .form-grid { grid-template-columns: 1fr; }
+    footer { flex-direction: column; }
+    .stats-row { grid-template-columns: repeat(3, 1fr); }
+    .stat { padding: 10px 12px; min-width: 90px; }
+    .stat-value { font-size: 15px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ── TICKER ── -->
+<div class="ticker-wrap">
+  <div class="ticker-track" id="ticker-track">
+    <!-- Populated by Finnhub API -->
+    <span class="ticker-item">Loading market data...</span>
+  </div>
+</div>
+
+<!-- ── HEADER ── -->
+<header>
+  <div class="header-meta">
+    <div>EST. NEW YORK</div>
+    <div id="clock"></div>
+  </div>
+  <div class="header-title">
+    <h1>FRONT <span class="slash">//</span> OFFICE</h1>
+    <p>Markets · Banking · Asset Management · Revenue Roles Only</p>
+  </div>
+  <div class="header-right">
+    <div class="live-dot">Live</div>
+    <button class="btn-primary" onclick="openModal()">+ Post a Role</button>
+  </div>
+</header>
+
+<!-- ── MOBILE BAR ── -->
+<div class="mobile-bar">
+  <button class="hamburger" onclick="openDrawer()">☰ Filters</button>
+  <button class="btn-primary" onclick="openModal()">+ Post</button>
+</div>
+
+<!-- ── FILTER TABS ── -->
+<div class="filters">
+  <button class="filter-btn active" onclick="setFilter('all',this)">All Roles</button>
+  <button class="filter-btn" onclick="setFilter('S&T',this)">Sales & Trading</button>
+  <button class="filter-btn" onclick="setFilter('IBD',this)">Investment Banking</button>
+  <button class="filter-btn" onclick="setFilter('AM',this)">Asset Mgmt</button>
+  <button class="filter-btn" onclick="setFilter('PE',this)">PE / Alt</button>
+  <button class="filter-btn" onclick="setFilter('RM',this)">Research</button>
+  <button class="filter-btn" onclick="setFilter('PB',this)">Private Banking</button>
+</div>
+
+<!-- ── STATS ── -->
+<div class="stats-row">
+  <div class="stat">
+    <div class="stat-label">Open Roles</div>
+    <div class="stat-value" id="stat-total">—</div>
+    <div class="stat-sub" id="stat-new">Loading...</div>
+  </div>
+  <div class="stat">
+    <div class="stat-label">Firms Hiring</div>
+    <div class="stat-value" id="stat-firms">—</div>
+    <div class="stat-sub">Active this week</div>
+  </div>
+  <div class="stat">
+    <div class="stat-label">Top Function</div>
+    <div class="stat-value" style="font-size:14px;" id="stat-top">—</div>
+    <div class="stat-sub">Most postings</div>
+  </div>
+  <div class="stat">
+    <div class="stat-label">VP+ Roles</div>
+    <div class="stat-value" id="stat-senior">—</div>
+    <div class="stat-sub">Of all postings</div>
+  </div>
+  <div class="stat">
+    <div class="stat-label">Last Synced</div>
+    <div class="stat-value" style="font-size:13px;" id="stat-synced">—</div>
+    <div class="stat-sub">Auto-daily via cron</div>
+  </div>
+</div>
+
+<!-- ── MAIN ── -->
+<div class="main">
+  <!-- SIDEBAR (desktop) -->
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+      <div class="search-wrap">
+        <input class="search-input" type="text" placeholder="Search roles, firms..." oninput="setSearch(this.value)" />
+      </div>
+
+      <div class="sidebar-section" style="margin-top:14px;">
+        <div class="sidebar-label">Function</div>
+        <div class="sidebar-item active" onclick="setFilter('all',null);setSideActive(this)"><span class="sidebar-item-name">All Roles</span><span class="sidebar-count" id="sc-all">—</span></div>
+        <div class="sidebar-item" onclick="setFilter('S&T',null);setSideActive(this)"><span class="sidebar-item-name">Sales & Trading</span><span class="sidebar-count" id="sc-st">—</span></div>
+        <div class="sidebar-item" onclick="setFilter('IBD',null);setSideActive(this)"><span class="sidebar-item-name">Investment Banking</span><span class="sidebar-count" id="sc-ibd">—</span></div>
+        <div class="sidebar-item" onclick="setFilter('AM',null);setSideActive(this)"><span class="sidebar-item-name">Asset Management</span><span class="sidebar-count" id="sc-am">—</span></div>
+        <div class="sidebar-item" onclick="setFilter('PE',null);setSideActive(this)"><span class="sidebar-item-name">PE / Alt</span><span class="sidebar-count" id="sc-pe">—</span></div>
+        <div class="sidebar-item" onclick="setFilter('RM',null);setSideActive(this)"><span class="sidebar-item-name">Research</span><span class="sidebar-count" id="sc-rm">—</span></div>
+        <div class="sidebar-item" onclick="setFilter('PB',null);setSideActive(this)"><span class="sidebar-item-name">Private Banking</span><span class="sidebar-count" id="sc-pb">—</span></div>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-label">Seniority</div>
+        <div class="sidebar-item" onclick="setLevel('junior');setSideActive(this)"><span class="sidebar-item-name">Analyst / Associate</span><span class="sidebar-count" id="sc-junior">—</span></div>
+        <div class="sidebar-item" onclick="setLevel('mid');setSideActive(this)"><span class="sidebar-item-name">VP / Director</span><span class="sidebar-count" id="sc-mid">—</span></div>
+        <div class="sidebar-item" onclick="setLevel('senior');setSideActive(this)"><span class="sidebar-item-name">MD / Partner</span><span class="sidebar-count" id="sc-senior">—</span></div>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-label">Source</div>
+        <div class="sidebar-item" onclick="setSource('all');setSideActive(this)"><span class="sidebar-item-name">All Sources</span></div>
+        <div class="sidebar-item" onclick="setSource('Greenhouse');setSideActive(this)"><span class="sidebar-item-name">Greenhouse ATS</span></div>
+        <div class="sidebar-item" onclick="setSource('Indeed');setSideActive(this)"><span class="sidebar-item-name">Indeed</span></div>
+        <div class="sidebar-item" onclick="setSource('Submitted');setSideActive(this)"><span class="sidebar-item-name">Firm Submitted</span></div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- JOB LIST -->
+  <main>
+    <div class="pinned-banner">
+      <span class="pinned-label">▲ Aggregated</span>
+      <span class="pinned-text">Sourced daily from Greenhouse ATS · Indeed · Firm submissions · Classified by AI</span>
+    </div>
+    <div id="job-list">
+      <div class="state-msg"><div class="spin">◌</div><br>Loading roles...</div>
+    </div>
+  </main>
+</div>
+
+<!-- ── FOOTER ── -->
+<footer>
+  <p>Front Office // Revenue-generating roles only</p>
+  <p>Greenhouse ATS · Indeed · Firm submissions · AI-classified</p>
+</footer>
+
+<!-- ── SUBMIT MODAL ── -->
+<div class="overlay" id="submit-overlay">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Post a <span>Role</span></div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body" id="modal-body">
+      <div class="form-row">
+        <label>Job Title *</label>
+        <input class="form-input" id="f-title" type="text" placeholder="e.g. VP — Equity Sales, Americas" />
+      </div>
+      <div class="form-grid">
+        <div>
+          <label>Firm *</label>
+          <input class="form-input" id="f-firm" type="text" placeholder="Goldman Sachs" />
+        </div>
+        <div>
+          <label>Location *</label>
+          <input class="form-input" id="f-loc" type="text" placeholder="New York, NY" />
+        </div>
+      </div>
+      <div class="form-grid">
+        <div>
+          <label>Function *</label>
+          <select class="form-select" id="f-type">
+            <option value="">Select...</option>
+            <option value="S&T">Sales & Trading</option>
+            <option value="IBD">Investment Banking</option>
+            <option value="AM">Asset Management</option>
+            <option value="PE">Private Equity / Alt</option>
+            <option value="RM">Research & Markets</option>
+            <option value="PB">Private Banking / WM</option>
+          </select>
+        </div>
+        <div>
+          <label>Seniority *</label>
+          <select class="form-select" id="f-level">
+            <option value="">Select...</option>
+            <option>Analyst</option>
+            <option>Associate</option>
+            <option>Senior Associate</option>
+            <option>VP</option>
+            <option>Director</option>
+            <option>MD</option>
+            <option>Partner</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-grid">
+        <div>
+          <label>Compensation (optional)</label>
+          <input class="form-input" id="f-comp" type="text" placeholder="$300K–$450K total comp" />
+        </div>
+        <div>
+          <label>Apply URL</label>
+          <input class="form-input" id="f-url" type="url" placeholder="https://..." />
+        </div>
+      </div>
+      <div class="form-row">
+        <label>Description *</label>
+        <textarea class="form-textarea" id="f-desc" placeholder="Role overview, requirements, key responsibilities..."></textarea>
+      </div>
+      <div class="form-row" style="margin-bottom:0;">
+        <label>Your Email (not displayed)</label>
+        <input class="form-input" id="f-email" type="email" placeholder="you@firm.com" />
+        <div class="form-hint">⚑ Front office and revenue-generating roles only. Ops, tech, compliance, and back office will not be listed.</div>
+      </div>
+    </div>
+    <div class="success-msg" id="modal-success">
+      <div class="success-icon">✓</div>
+      <h3>Role Submitted</h3>
+      <p>Your posting is under review and will appear within 24 hours once verified as a genuine front office role.</p>
+    </div>
+    <div class="modal-footer" id="modal-footer">
+      <button class="cancel-btn" onclick="closeModal()">Cancel</button>
+      <button class="btn-primary" onclick="submitRole()">Submit for Review →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── MOBILE DRAWER ── -->
+<div class="sidebar-drawer" id="drawer">
+  <div class="drawer-backdrop" onclick="closeDrawer()"></div>
+  <div class="drawer-content">
+    <div class="drawer-header">
+      <span>Filter Roles</span>
+      <button class="modal-close" onclick="closeDrawer()">✕</button>
+    </div>
+    <div style="padding:12px 0;">
+      <div class="search-wrap" style="padding-bottom:12px;">
+        <input class="search-input" type="text" placeholder="Search..." oninput="setSearch(this.value)" />
+      </div>
+      <div class="sidebar-section">
+        <div class="sidebar-label">Function</div>
+        <div class="sidebar-item" onclick="setFilter('all',null);closeDrawer()"><span class="sidebar-item-name">All Roles</span></div>
+        <div class="sidebar-item" onclick="setFilter('S&T',null);closeDrawer()"><span class="sidebar-item-name">Sales & Trading</span></div>
+        <div class="sidebar-item" onclick="setFilter('IBD',null);closeDrawer()"><span class="sidebar-item-name">Investment Banking</span></div>
+        <div class="sidebar-item" onclick="setFilter('AM',null);closeDrawer()"><span class="sidebar-item-name">Asset Management</span></div>
+        <div class="sidebar-item" onclick="setFilter('PE',null);closeDrawer()"><span class="sidebar-item-name">PE / Alt</span></div>
+        <div class="sidebar-item" onclick="setFilter('RM',null);closeDrawer()"><span class="sidebar-item-name">Research</span></div>
+        <div class="sidebar-item" onclick="setFilter('PB',null);closeDrawer()"><span class="sidebar-item-name">Private Banking</span></div>
+      </div>
+      <div class="sidebar-section">
+        <div class="sidebar-label">Seniority</div>
+        <div class="sidebar-item" onclick="setLevel('junior');closeDrawer()"><span class="sidebar-item-name">Analyst / Associate</span></div>
+        <div class="sidebar-item" onclick="setLevel('mid');closeDrawer()"><span class="sidebar-item-name">VP / Director</span></div>
+        <div class="sidebar-item" onclick="setLevel('senior');closeDrawer()"><span class="sidebar-item-name">MD / Partner</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// CONFIG — replace with your actual keys
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+const FINNHUB_KEY   = 'd6diks9r01qm89pjlmbgd6diks9r01qm89pjlmc0';
+const SUPABASE_URL  = 'https://bgyohuhfrtbwmagiaqxh.supabase.co';
+const SUPABASE_KEY  = 'sb_publishable_RtA8PzLaoT2wQ463r-BHGQ_b4B04cOM';
+
+// Finance stocks to show in the ticker
+const TICKER_SYMBOLS = ['GS','MS','JPM','BAC','BLK','C','BX','KKR','APO','SCHW','WFC','AXP','CG','EVR'];
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// STATE
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+let allJobs     = [];
+let filterType  = 'all';
+let filterLevel = 'all';
+let filterSrc   = 'all';
+let searchTerm  = '';
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// LIVE TICKER — Finnhub
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+async function loadTicker() {
+  try {
+    // Fetch all quotes in parallel
+    const quotes = await Promise.all(
+      TICKER_SYMBOLS.map(sym =>
+        fetch(`https://finnhub.io/api/v1/quote?symbol=${sym}&token=${FINNHUB_KEY}`)
+          .then(r => r.json())
+          .then(d => ({ sym, price: d.c, pct: d.dp, change: d.d }))
+          .catch(() => null)
+      )
+    );
+
+    const valid = quotes.filter(q => q && q.price > 0);
+    if (!valid.length) return;
+
+    // Build ticker items (duplicated for seamless loop)
+    const makeItems = () => valid.map(q => {
+      const up = q.pct >= 0;
+      const pctStr = (up ? '+' : '') + q.pct.toFixed(2) + '%';
+      return `<span class="ticker-item">
+        <strong>${q.sym}</strong>
+        $${q.price.toFixed(2)}
+        <span class="ticker-arrow ${up?'up':'dn'}">${up?'▲':'▼'}</span>
+        <span class="ticker-pct ${up?'up':'dn'}">${pctStr}</span>
+      </span>`;
+    }).join('');
+
+    const track = document.getElementById('ticker-track');
+    track.innerHTML = makeItems() + makeItems(); // duplicate for loop
+
+    // Adjust animation speed based on content width
+    const itemCount = valid.length;
+    track.style.animationDuration = (itemCount * 5) + 's';
+
+  } catch(e) {
+    console.warn('Ticker load failed:', e);
+  }
+}
+
+// Refresh ticker every 60 seconds (Finnhub free tier: 60 calls/min)
+loadTicker();
+setInterval(loadTicker, 60000);
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// JOBS — Load from Supabase
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+async function loadJobs() {
+  // If Supabase not configured yet, show sample data
+  if (SUPABASE_URL === 'YOUR_SUPABASE_URL') {
+    allJobs = SAMPLE_JOBS;
+    updateStats();
+    renderJobs();
+    return;
+  }
+
+  try {
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/jobs?is_approved=eq.true&is_front_office=eq.true&order=posted_at.desc&limit=100`,
+      { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` } }
+    );
+    if (!res.ok) throw new Error('Supabase fetch failed');
+    allJobs = await res.json();
+    updateStats();
+    renderJobs();
+  } catch(e) {
+    console.warn('Supabase not configured, using sample data:', e.message);
+    allJobs = SAMPLE_JOBS;
+    updateStats();
+    renderJobs();
+  }
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// RENDER
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+const SENIOR_LEVELS = ['MD','Partner','Director','Managing Director'];
+const MID_LEVELS    = ['VP','Vice President'];
+
+function matchLevel(job, filter) {
+  if (filter === 'all') return true;
+  const l = (job.level || '').toLowerCase();
+  if (filter === 'senior') return SENIOR_LEVELS.some(s => l.includes(s.toLowerCase()));
+  if (filter === 'mid')    return MID_LEVELS.some(s => l.includes(s.toLowerCase()));
+  if (filter === 'junior') return l.includes('analyst') || l.includes('associate');
+  return true;
+}
+
+function getFiltered() {
+  const s = searchTerm.toLowerCase();
+  return allJobs.filter(j => {
+    const typeOk  = filterType === 'all' || j.function === filterType;
+    const levelOk = matchLevel(j, filterLevel);
+    const srcOk   = filterSrc === 'all' || j.source === filterSrc;
+    const searchOk = !s || (j.title||'').toLowerCase().includes(s)
+                       || (j.firm||'').toLowerCase().includes(s)
+                       || (j.desk||'').toLowerCase().includes(s)
+                       || (j.location||'').toLowerCase().includes(s);
+    return typeOk && levelOk && srcOk && searchOk;
+  });
+}
+
+function timeAgo(dateStr) {
+  if (!dateStr) return 'Recently';
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const days = Math.floor(diff / 86400000);
+  if (days === 0) return 'Today';
+  if (days === 1) return 'Yesterday';
+  if (days < 7)  return `${days} days ago`;
+  if (days < 14) return '1 week ago';
+  return `${Math.floor(days/7)} weeks ago`;
+}
+
+const FN_LABEL = { 'S&T':'S&T','IBD':'IBD','AM':'Asset Mgmt','PE':'PE/Alt','RM':'Research','PB':'Pvt. Banking' };
+
+function renderJobs() {
+  const list = document.getElementById('job-list');
+  const jobs = getFiltered();
+
+  if (!jobs.length) {
+    list.innerHTML = '<div class="state-msg">No roles match your current filters.</div>';
+    return;
+  }
+
+  const isNew = j => {
+    if (!j.posted_at) return false;
+    return (Date.now() - new Date(j.posted_at).getTime()) < 86400000 * 3;
+  };
+
+  list.innerHTML = jobs.map(j => `
+    <div class="job-card ${j.is_featured ? 'featured' : isNew(j) ? 'isnew' : ''}">
+      <div class="job-header">
+        <div class="job-title">${j.title || ''}</div>
+        ${j.comp ? `<div class="job-comp">${j.comp}</div>` : ''}
+      </div>
+      <div class="job-meta">
+        <span class="job-firm">${j.firm || ''}</span>
+        ${j.location ? `<span class="sep">|</span><span class="job-loc">${j.location}</span>` : ''}
+        ${j.function ? `<span class="tag tag-type">${FN_LABEL[j.function]||j.function}</span>` : ''}
+        ${j.level    ? `<span class="tag tag-level">${j.level}</span>` : ''}
+        ${isNew(j)   ? `<span class="tag tag-new">New</span>` : ''}
+        ${j.is_hot   ? `<span class="tag tag-hot">Hot</span>` : ''}
+        ${j.source   ? `<span class="tag tag-src">${j.source}</span>` : ''}
+      </div>
+      ${j.description ? `<div class="job-desc">${j.description.slice(0,280)}${j.description.length>280?'…':''}</div>` : ''}
+      <div class="job-footer">
+        <span class="job-date">${timeAgo(j.posted_at)}</span>
+        ${j.apply_url
+          ? `<a class="apply-btn" href="${j.apply_url}" target="_blank" rel="noopener">Apply →</a>`
+          : `<button class="apply-btn">Apply →</button>`}
+      </div>
+    </div>
+  `).join('');
+}
+
+function updateStats() {
+  const total  = allJobs.length;
+  const firms  = new Set(allJobs.map(j => j.firm)).size;
+  const today  = allJobs.filter(j => j.posted_at && (Date.now()-new Date(j.posted_at).getTime()) < 86400000).length;
+  const senior = allJobs.filter(j => SENIOR_LEVELS.some(s => (j.level||'').toLowerCase().includes(s.toLowerCase()))).length;
+  const pctSen = total ? Math.round(senior/total*100) : 0;
+
+  // Top function
+  const fnCounts = {};
+  allJobs.forEach(j => { fnCounts[j.function] = (fnCounts[j.function]||0)+1; });
+  const topFn = Object.entries(fnCounts).sort((a,b)=>b[1]-a[1])[0];
+
+  document.getElementById('stat-total').textContent  = total;
+  document.getElementById('stat-new').textContent    = `↑ ${today} today`;
+  document.getElementById('stat-firms').textContent  = firms;
+  document.getElementById('stat-top').textContent    = topFn ? (FN_LABEL[topFn[0]]||topFn[0]) : '—';
+  document.getElementById('stat-senior').textContent = pctSen + '%';
+  document.getElementById('stat-synced').textContent = new Date().toLocaleDateString('en-US',{month:'short',day:'numeric'});
+
+  // Sidebar counts
+  const counts = { all: total, 'S&T':0, IBD:0, AM:0, PE:0, RM:0, PB:0 };
+  const levels = { junior:0, mid:0, senior:0 };
+  allJobs.forEach(j => {
+    if (counts[j.function] !== undefined) counts[j.function]++;
+    if (matchLevel(j,'junior')) levels.junior++;
+    if (matchLevel(j,'mid'))    levels.mid++;
+    if (matchLevel(j,'senior')) levels.senior++;
+  });
+  const ids = { all:'sc-all','S&T':'sc-st',IBD:'sc-ibd',AM:'sc-am',PE:'sc-pe',RM:'sc-rm',PB:'sc-pb' };
+  Object.entries(ids).forEach(([k,id]) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = counts[k] ?? '—';
+  });
+  const lvlIds = { junior:'sc-junior', mid:'sc-mid', senior:'sc-senior' };
+  Object.entries(lvlIds).forEach(([k,id]) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = levels[k];
+  });
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// FILTERS
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function setFilter(type, btn) {
+  filterType = type;
+  if (btn) {
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+  }
+  renderJobs();
+}
+function setLevel(level) { filterLevel = level; renderJobs(); }
+function setSource(src)  { filterSrc = src; renderJobs(); }
+function setSearch(val)  { searchTerm = val; renderJobs(); }
+function setSideActive(el) {
+  el.closest('.sidebar-section,.sidebar-inner')
+    .querySelectorAll('.sidebar-item')
+    .forEach(i => i.classList.remove('active'));
+  el.classList.add('active');
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// SUBMIT ROLE → Supabase
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function openModal()  { document.getElementById('submit-overlay').classList.add('open'); document.body.style.overflow='hidden'; }
+function closeModal() { document.getElementById('submit-overlay').classList.remove('open'); document.body.style.overflow=''; }
+document.getElementById('submit-overlay').addEventListener('click', e => { if(e.target.id==='submit-overlay') closeModal(); });
+
+async function submitRole() {
+  const title = document.getElementById('f-title').value.trim();
+  const firm  = document.getElementById('f-firm').value.trim();
+  const type  = document.getElementById('f-type').value;
+  const level = document.getElementById('f-level').value;
+  const desc  = document.getElementById('f-desc').value.trim();
+  if (!title || !firm || !type || !level || !desc) { alert('Please fill in all required (*) fields.'); return; }
+
+  const payload = {
+    title, firm,
+    location:      document.getElementById('f-loc').value.trim(),
+    function:      type,
+    level,
+    comp:          document.getElementById('f-comp').value.trim(),
+    apply_url:     document.getElementById('f-url').value.trim(),
+    description:   desc,
+    contact_email: document.getElementById('f-email').value.trim(),
+    status:        'pending',
+  };
+
+  if (SUPABASE_URL !== 'YOUR_SUPABASE_URL') {
+    try {
+      await fetch(`${SUPABASE_URL}/rest/v1/submissions`, {
+        method: 'POST',
+        headers: {
+          'apikey': SUPABASE_KEY,
+          'Authorization': `Bearer ${SUPABASE_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload)
+      });
+    } catch(e) { console.warn('Submit failed:', e); }
+  }
+
+  document.getElementById('modal-body').style.display   = 'none';
+  document.getElementById('modal-footer').style.display = 'none';
+  document.getElementById('modal-success').style.display = 'block';
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// MOBILE DRAWER
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function openDrawer()  { document.getElementById('drawer').classList.add('open'); document.body.style.overflow='hidden'; }
+function closeDrawer() { document.getElementById('drawer').classList.remove('open'); document.body.style.overflow=''; }
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// CLOCK
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function updateClock() {
+  const el = document.getElementById('clock');
+  if (!el) return;
+  el.textContent = new Intl.DateTimeFormat('en-US', {
+    timeZone:'America/New_York', hour:'2-digit', minute:'2-digit', second:'2-digit', hour12:false
+  }).format(new Date()) + ' ET';
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// SAMPLE DATA (shown until Supabase is wired)
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+const SAMPLE_JOBS = [
+  { id:1, is_featured:true, title:"Managing Director — Equity Sales, Americas", firm:"Goldman Sachs", location:"New York, NY", function:"S&T", level:"MD", comp:"$800K–$1.4M", description:"Lead institutional equity sales coverage across long-only and hedge fund clients. Drive revenue generation, deepen existing relationships, and expand footprint across Americas. 12+ years experience required.", posted_at:new Date().toISOString(), source:"Greenhouse", apply_url:"#" },
+  { id:2, title:"VP — Leveraged Finance / LBO Origination", firm:"JPMorgan Chase", location:"New York, NY", function:"IBD", level:"VP", comp:"$375K–$520K", description:"Work alongside senior bankers on origination, structuring, and execution of leveraged finance transactions for PE-sponsored issuers. Strong modeling and credit analysis skills required.", posted_at:new Date(Date.now()-86400000).toISOString(), source:"Greenhouse", apply_url:"#", is_hot:true },
+  { id:3, title:"Portfolio Manager — Multi-Strat Macro", firm:"Citadel", location:"New York, NY", function:"AM", level:"PM", comp:"P&L Share", description:"Experienced macro PM with demonstrable track record. Strategies spanning G10 rates, FX, and commodities. Full discretionary mandate with access to best-in-class infrastructure.", posted_at:new Date(Date.now()-86400000*2).toISOString(), source:"Submitted", apply_url:"#" },
+  { id:4, title:"Director — Credit Trading, IG & HY", firm:"Morgan Stanley", location:"New York, NY", function:"S&T", level:"Director", comp:"$500K–$750K", description:"Senior trader covering investment grade and high yield corporate bonds, with market-making and risk management responsibilities. Strong buy-side relationships required.", posted_at:new Date(Date.now()-86400000*3).toISOString(), source:"Greenhouse", apply_url:"#" },
+  { id:5, is_featured:true, title:"Senior Associate — M&A Advisory, Technology", firm:"Lazard", location:"San Francisco, CA", function:"IBD", level:"Senior Associate", comp:"$250K–$340K", description:"Join the technology coverage team advising on sell-side and buy-side M&A mandates. Financial modeling, valuation, pitch preparation, and direct client interaction. 4–6 years IB experience.", posted_at:new Date(Date.now()-86400000*3).toISOString(), source:"Indeed", apply_url:"#" },
+  { id:6, title:"VP — Rates Structuring, EMEA", firm:"Barclays", location:"London, UK", function:"S&T", level:"VP", comp:"£380K–£520K", description:"Structure complex interest rate derivatives for financial institutions and corporates across EMEA. Deep rates expertise and strong client-facing skills required.", posted_at:new Date(Date.now()-86400000*4).toISOString(), source:"Greenhouse", apply_url:"#" },
+  { id:7, title:"Equity Research Analyst — Financials", firm:"UBS", location:"New York, NY", function:"RM", level:"Analyst", comp:"$180K–$260K", description:"Publish research on U.S. banks and diversified financials. Earnings modeling, sector analysis, client interaction, and contribution to thematic research initiatives.", posted_at:new Date(Date.now()-86400000*5).toISOString(), source:"Submitted", apply_url:"#" },
+  { id:8, title:"Associate — ECM Execution", firm:"Bank of America", location:"New York, NY", function:"IBD", level:"Associate", comp:"$220K–$300K", description:"Support execution of IPOs, follow-ons, and convertibles. Coordinate with coverage, syndicate, legal, and compliance teams. Strong equity valuation and capital markets knowledge required.", posted_at:new Date(Date.now()-86400000*6).toISOString(), source:"Greenhouse", apply_url:"#" },
+  { id:9, title:"MD — Private Wealth Advisor, UHNW", firm:"J.P. Morgan Private Bank", location:"Miami, FL", function:"PB", level:"MD", comp:"Base + AUM bonus", description:"Manage UHNW individuals and family offices with bespoke wealth planning, investment advisory, and banking solutions. Minimum $500M portable AUM expected.", posted_at:new Date(Date.now()-86400000*7).toISOString(), source:"Submitted", apply_url:"#" },
+  { id:10, title:"VP — Quantitative Equity Researcher", firm:"Point72", location:"Stamford, CT", function:"AM", level:"VP", comp:"$400K–$650K", description:"Develop systematic alpha signals in global equities. Integrate quant research into live strategies alongside portfolio managers. Python, statistics, financial theory background required.", posted_at:new Date(Date.now()-86400000*7).toISOString(), source:"Indeed", apply_url:"#" },
+  { id:11, title:"Senior Associate — Infrastructure PE", firm:"Brookfield Asset Management", location:"New York, NY", function:"PE", level:"Senior Associate", comp:"$300K–$400K", description:"Execute infrastructure equity investments across utilities, transport, and renewables. Deal origination support, due diligence, financial modeling, and portfolio company monitoring.", posted_at:new Date(Date.now()-86400000*8).toISOString(), source:"Submitted", apply_url:"#" },
+  { id:12, title:"Director — FX Sales, Corporate Clients", firm:"Citi", location:"New York, NY", function:"S&T", level:"Director", comp:"$450K–$620K", description:"Drive FX hedging revenue from corporate treasury clients across North America. Own client relationships, pitch hedging solutions, and collaborate with trading and structuring on complex transactions.", posted_at:new Date(Date.now()-86400000*8).toISOString(), source:"Greenhouse", apply_url:"#" },
+];
+
+// ── INIT ──
+loadJobs();
+</script>
+</body>
+</html>
