@@ -286,12 +286,20 @@
   }
   .pinned-text { font-size: 11px; color: var(--dim); }
 
+  #job-list {
+    width: 100%;
+    overflow-x: hidden;
+  }
+
   .job-card {
     border-bottom: 1px solid var(--border);
     padding: 18px 24px;
     cursor: pointer;
     transition: background 0.1s;
     border-left: 3px solid transparent;
+    width: 100%;
+    box-sizing: border-box;
+    display: block;
   }
   .job-card:hover { background: rgba(255,255,255,0.015); }
   .job-card.featured { border-left-color: var(--accent); }
