@@ -22,6 +22,8 @@
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
 
+  html { overflow-x: hidden; width: 100%; }
+
   body {
     background: var(--bg);
     color: var(--text);
@@ -29,6 +31,9 @@
     font-size: 13px;
     min-height: 100vh;
     overflow-x: hidden;
+    width: 100%;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
   }
 
   /* ── TICKER ── */
@@ -287,9 +292,7 @@
     cursor: pointer;
     transition: background 0.1s;
     border-left: 3px solid transparent;
-    animation: fadeIn 0.2s ease;
   }
-  @keyframes fadeIn { from { opacity:0; transform:translateY(3px); } to { opacity:1; transform:translateY(0); } }
   .job-card:hover { background: rgba(255,255,255,0.015); }
   .job-card.featured { border-left-color: var(--accent); }
   .job-card.isnew { border-left-color: var(--accent2); }
