@@ -929,12 +929,22 @@ async function loadJobs() {
   }
 
   try {
-    const res = await fetch(
-      `${SUPABASE_URL}/rest/v1/jobs?is_approved=eq.true&is_front_office=eq.true&order=posted_at.desc&limit=100`,
-      { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` } }
-    );
-    if (!res.ok) throw new Error('Supabase fetch failed');
-    allJobs = await res.json();
+    // Paginate through all rows — Supabase returns max 1000 per request
+    let allResults = [];
+    let offset = 0;
+    const pageSize = 1000;
+    while (true) {
+      const res = await fetch(
+        `${SUPABASE_URL}/rest/v1/jobs?is_approved=eq.true&is_front_office=eq.true&order=posted_at.desc&limit=${pageSize}&offset=${offset}`,
+        { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}`, 'Range-Unit': 'items' } }
+      );
+      if (!res.ok) throw new Error('Supabase fetch failed');
+      const page = await res.json();
+      allResults = allResults.concat(page);
+      if (page.length < pageSize) break; // last page
+      offset += pageSize;
+    }
+    allJobs = allResults;
     updateStats();
     renderJobs();
   } catch(e) {
