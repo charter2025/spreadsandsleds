@@ -198,10 +198,12 @@ Front office = revenue-generating investment roles: trading, sales & trading, in
 asset/fund management, private equity, equity/credit research, quant research (alpha/investment focused),
 wealth/private banking, capital markets origination, macro strategy, structured finance.
 
-NOT front office = tech/engineering, operations, compliance, legal, HR, accounting, back office, 
-data engineering (unless investment-focused), enterprise risk.
+NOT front office = software/tech engineering (Java, Python, C++, DevOps, SRE, infrastructure engineers),
+operations, settlements, compliance, legal, HR, accounting, back office, data engineering (unless investment-focused).
 
-When in doubt at a bank or hedge fund — lean INCLUDE.
+IMPORTANT: "Engineer", "Developer", "SRE", "DevOps" in the title = NOT front office, even at a hedge fund.
+"Researcher", "Analyst", "Trader", "Portfolio Manager", "Banker", "Sales" = front office.
+When genuinely ambiguous for a non-engineering finance role — lean INCLUDE.
 
 For each job below respond with exactly one JSON object per line (no other text):
 {"i":0,"fo":true,"fn":"S&T","lv":"Analyst"}
