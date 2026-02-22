@@ -93,7 +93,8 @@ Description: ${(description || '').replace(/<[^>]+>/g, '').slice(0, 500)}`;
       max_tokens: 100,
       messages: [{ role: 'user', content: prompt }]
     });
-    return JSON.parse(res.content[0].text.trim());
+    const raw = res.content[0].text.trim().replace(/```json|```/g, '').trim();
+    return JSON.parse(raw);
   } catch (e) {
     console.warn('  Claude classification failed:', e.message);
     return { is_front_office: false, function: null, level: null };
