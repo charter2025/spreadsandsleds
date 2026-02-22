@@ -990,8 +990,29 @@ function renderJobs() {
     return (Date.now() - new Date(j.posted_at).getTime()) < 86400000 * 3;
   };
 
-  list.innerHTML = jobs.map(j => `
-    <div class="job-card ${j.is_featured ? 'featured' : isNew(j) ? 'isnew' : ''}">
+  // Strip HTML tags and decode entities for clean description text
+  const cleanDesc = html => {
+    if (!html) return '';
+    return html
+      .replace(/<[^>]+>/g, ' ')           // remove all HTML tags
+      .replace(/&nbsp;/g, ' ')
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'")
+      .replace(/\s+/g, ' ')               // collapse whitespace
+      .trim();
+  };
+
+  list.innerHTML = jobs.map(j => {
+    const desc = cleanDesc(j.description);
+    const snippet = desc.length > 260 ? desc.slice(0, 260) + '…' : desc;
+    const cardClass = `job-card ${j.is_featured ? 'featured' : isNew(j) ? 'isnew' : ''}`;
+    const url = j.apply_url && j.apply_url !== '#' ? j.apply_url : null;
+
+    return `
+    <div class="${cardClass}" ${url ? `onclick="window.open('${url}','_blank')" style="cursor:pointer"` : ''}>
       <div class="job-header">
         <div class="job-title">${j.title || ''}</div>
         ${j.comp ? `<div class="job-comp">${j.comp}</div>` : ''}
@@ -1005,15 +1026,15 @@ function renderJobs() {
         ${j.is_hot   ? `<span class="tag tag-hot">Hot</span>` : ''}
         ${j.source   ? `<span class="tag tag-src">${j.source}</span>` : ''}
       </div>
-      ${j.description ? `<div class="job-desc">${j.description.slice(0,280)}${j.description.length>280?'…':''}</div>` : ''}
+      ${snippet ? `<div class="job-desc">${snippet}</div>` : ''}
       <div class="job-footer">
         <span class="job-date">${timeAgo(j.posted_at)}</span>
-        ${j.apply_url
-          ? `<a class="apply-btn" href="${j.apply_url}" target="_blank" rel="noopener">Apply →</a>`
+        ${url
+          ? `<a class="apply-btn" href="${url}" target="_blank" rel="noopener" onclick="event.stopPropagation()">Apply →</a>`
           : `<button class="apply-btn">Apply →</button>`}
       </div>
-    </div>
-  `).join('');
+    </div>`;
+  }).join('');
 }
 
 function updateStats() {
