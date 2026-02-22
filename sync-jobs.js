@@ -1,88 +1,145 @@
 // sync-jobs.js
 // Runs daily via GitHub Actions cron
-// Fetches from Greenhouse ATS + Indeed RSS → classifies with Claude → stores in Supabase
+// Sources: Greenhouse ATS + Workday (banks/funds)
+// Classifies with Claude Haiku → stores in Supabase
 
 import { createClient } from '@supabase/supabase-js';
 import Anthropic from '@anthropic-ai/sdk';
 
-// ── CONFIG (set these as GitHub Actions secrets) ──
 const SUPABASE_URL         = process.env.SUPABASE_URL;
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY;
 const ANTHROPIC_API_KEY    = process.env.ANTHROPIC_API_KEY;
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
 const claude   = new Anthropic({ apiKey: ANTHROPIC_API_KEY });
+const sleep    = ms => new Promise(r => setTimeout(r, ms));
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// GREENHOUSE FIRMS
-// Verify slugs at: https://boards-api.greenhouse.io/v1/boards/{slug}/jobs
+// GREENHOUSE FIRMS — verified + expanded
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 const GREENHOUSE_FIRMS = [
-  { slug: 'goldmansachs',        name: 'Goldman Sachs' },
-  { slug: 'citadel',             name: 'Citadel' },
-  { slug: 'citadelsecurities',   name: 'Citadel Securities' },
-  { slug: 'blackstone',          name: 'Blackstone' },
-  { slug: 'kkr',                 name: 'KKR' },
-  { slug: 'apolloglobal',        name: 'Apollo Global Management' },
-  { slug: 'bridgewater',         name: 'Bridgewater Associates' },
-  { slug: 'point72',             name: 'Point72' },
-  { slug: 'deshawgroup',         name: 'D.E. Shaw' },
-  { slug: 'twosigma',            name: 'Two Sigma' },
-  { slug: 'janestreet',          name: 'Jane Street' },
-  { slug: 'hudsonrivertrading',  name: 'Hudson River Trading' },
-  { slug: 'pimco',               name: 'PIMCO' },
-  { slug: 'mangroup',            name: 'Man Group' },
-  { slug: 'lazard',              name: 'Lazard' },
-  { slug: 'evercoregroup',       name: 'Evercore' },
-  { slug: 'moelis',              name: 'Moelis & Company' },
-  { slug: 'pwp',                 name: 'Perella Weinberg Partners' },
-  { slug: 'houlihanlokeyinc',    name: 'Houlihan Lokey' },
-  { slug: 'bcgpartners',         name: 'Cowen' },
-  // Add more as you find valid slugs
-];
-
-// Indeed RSS — finance-specific queries (no auth required)
-const INDEED_QUERIES = [
-  { q: 'equity+sales+managing+director', loc: 'New+York' },
-  { q: 'investment+banking+VP+director', loc: 'New+York' },
-  { q: 'portfolio+manager+hedge+fund',   loc: 'New+York' },
-  { q: 'fixed+income+trader+director',   loc: 'New+York' },
-  { q: 'private+equity+associate',       loc: 'New+York' },
-  { q: 'equity+research+analyst+VP',     loc: 'New+York' },
-  { q: 'leveraged+finance+origination',  loc: 'New+York' },
-  { q: 'FX+sales+corporate+director',    loc: 'London' },
-  { q: 'credit+trading+director',        loc: 'New+York' },
-  { q: 'asset+management+portfolio',     loc: 'New+York' },
+  // Confirmed working
+  { slug: 'point72',              name: 'Point72' },
+  { slug: 'janestreet',           name: 'Jane Street' },
+  { slug: 'mangroup',             name: 'Man Group' },
+  // Boutique banks
+  { slug: 'lazard',               name: 'Lazard' },
+  { slug: 'evercore',             name: 'Evercore' },
+  { slug: 'evercoregroup',        name: 'Evercore' },
+  { slug: 'moelis',               name: 'Moelis & Company' },
+  { slug: 'pwp',                  name: 'Perella Weinberg Partners' },
+  { slug: 'pwpartners',           name: 'Perella Weinberg Partners' },
+  { slug: 'houlihanlokeyinc',     name: 'Houlihan Lokey' },
+  { slug: 'houlihanlokey',        name: 'Houlihan Lokey' },
+  { slug: 'jefferies',            name: 'Jefferies' },
+  { slug: 'jefferiesllc',         name: 'Jefferies' },
+  { slug: 'guggenheimpartners',   name: 'Guggenheim Partners' },
+  { slug: 'baird',                name: 'Baird' },
+  { slug: 'rwbaird',              name: 'Baird' },
+  { slug: 'pipersandler',         name: 'Piper Sandler' },
+  { slug: 'stifel',               name: 'Stifel' },
+  { slug: 'cowen',                name: 'Cowen' },
+  { slug: 'tdcowen',              name: 'TD Cowen' },
+  // Hedge funds / quant
+  { slug: 'twosigma',             name: 'Two Sigma' },
+  { slug: 'twosigmainvestments',  name: 'Two Sigma' },
+  { slug: 'deshawgroup',          name: 'D.E. Shaw' },
+  { slug: 'deshaw',               name: 'D.E. Shaw' },
+  { slug: 'hudsonrivertrading',   name: 'Hudson River Trading' },
+  { slug: 'hrt',                  name: 'Hudson River Trading' },
+  { slug: 'pimco',                name: 'PIMCO' },
+  { slug: 'virtu',                name: 'Virtu Financial' },
+  { slug: 'virtufinancial',       name: 'Virtu Financial' },
+  { slug: 'akunacapital',         name: 'Akuna Capital' },
+  { slug: 'imc',                  name: 'IMC Trading' },
+  { slug: 'squarepointcapital',   name: 'Squarepoint Capital' },
+  { slug: 'millennium',           name: 'Millennium Management' },
+  { slug: 'millenniummanagement', name: 'Millennium Management' },
+  { slug: 'aqr',                  name: 'AQR Capital Management' },
+  { slug: 'aqrcapital',           name: 'AQR Capital Management' },
+  { slug: 'bridgewater',          name: 'Bridgewater Associates' },
+  { slug: 'wintongroup',          name: 'Winton Group' },
+  // Asset managers
+  { slug: 'fidelity',             name: 'Fidelity Investments' },
+  { slug: 'fidelityinvestments',  name: 'Fidelity Investments' },
+  { slug: 'troweprice',           name: 'T. Rowe Price' },
+  { slug: 'invesco',              name: 'Invesco' },
+  { slug: 'franklintempleton',    name: 'Franklin Templeton' },
+  { slug: 'nuveen',               name: 'Nuveen' },
+  { slug: 'pgim',                 name: 'PGIM' },
+  { slug: 'westernasset',         name: 'Western Asset Management' },
+  // PE / Alternatives
+  { slug: 'kkr',                  name: 'KKR' },
+  { slug: 'kkrecruitment',        name: 'KKR' },
+  { slug: 'apolloglobal',         name: 'Apollo Global Management' },
+  { slug: 'apollo',               name: 'Apollo Global Management' },
+  { slug: 'carlyle',              name: 'The Carlyle Group' },
+  { slug: 'thecarlylegroup',      name: 'The Carlyle Group' },
+  { slug: 'tpg',                  name: 'TPG Capital' },
+  { slug: 'warburgpincus',        name: 'Warburg Pincus' },
+  { slug: 'silverlake',           name: 'Silver Lake' },
+  { slug: 'silverlakepartners',   name: 'Silver Lake' },
+  { slug: 'generalatlantic',      name: 'General Atlantic' },
+  { slug: 'golubcapital',         name: 'Golub Capital' },
+  { slug: 'aresmanagement',       name: 'Ares Management' },
+  { slug: 'blueowl',              name: 'Blue Owl Capital' },
+  { slug: 'bluowl',               name: 'Blue Owl Capital' },
 ];
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// CLAUDE CLASSIFICATION
-// Uses Haiku — cheapest, fastest, ~$0.002 per 1000 roles
+// WORKDAY FIRMS — major banks/funds that use Workday ATS
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+const WORKDAY_FIRMS = [
+  { name: 'Goldman Sachs',   tenant: 'goldmansachs',  board: 'GoldmanSachs' },
+  { name: 'JPMorgan',        tenant: 'jpmc',          board: 'JPMorgan' },
+  { name: 'Morgan Stanley',  tenant: 'morganstanley', board: 'MorganStanley' },
+  { name: 'BlackRock',       tenant: 'blackrock',     board: 'BlackRock' },
+  { name: 'Citadel',         tenant: 'citadel',       board: 'Citadel' },
+  { name: 'Blackstone',      tenant: 'blackstone',    board: 'Blackstone' },
+  { name: 'Bank of America', tenant: 'bankofamerica', board: 'BankofAmerica' },
+  { name: 'Citigroup',       tenant: 'citi',          board: 'Citi' },
+  { name: 'Barclays',        tenant: 'barclays',      board: 'Barclays' },
+  { name: 'UBS',             tenant: 'ubs',           board: 'UBS' },
+  { name: 'Wells Fargo',     tenant: 'wellsfargo',    board: 'WellsFargo' },
+  { name: 'HSBC',            tenant: 'hsbc',          board: 'HSBC' },
+];
+
+const WORKDAY_SEARCH_TERMS = [
+  'trader', 'portfolio manager', 'investment banking', 'sales trading',
+  'equity research', 'fixed income', 'private equity', 'quantitative researcher',
+  'derivatives', 'credit analyst', 'wealth management', 'capital markets',
+];
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// CLAUDE CLASSIFICATION — loosened filter
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 async function classifyRole(title, description) {
   const prompt = `You are classifying finance job postings for a front office jobs board.
 
-FRONT OFFICE (revenue-generating) roles include:
-- Sales & Trading (equities, fixed income, FX, commodities, derivatives, structured products)
-- Investment Banking (M&A advisory, ECM, DCM, leveraged finance, coverage)
-- Asset Management (portfolio management, fund management, hedge fund strategies)
-- Private Equity / Venture Capital / Infrastructure investing
-- Equity Research / Credit Research / Market Strategy
-- Private Banking / Wealth Management (client-facing coverage)
+INCLUDE (is_front_office: true):
+- Sales & Trading (equities, FI, FX, rates, commodities, derivatives, structured products)
+- Investment Banking (M&A, ECM, DCM, leveraged finance, restructuring, coverage, origination)
+- Asset/Fund Management (portfolio managers, analysts, strategists, allocators)
+- Private Equity, Venture Capital, Credit, Infrastructure, Real Assets investing
+- Equity Research, Credit Research, Macro Strategy, Market Intelligence
+- Private Banking, Wealth Management (client-facing)
+- Quantitative Research (investment/alpha focused, systematic strategies)
+- Trading Risk Management (market risk, counterparty risk on trading desks)
+- Structured Finance / Securitization (deal execution)
+- Capital Markets (origination, syndication, underwriting)
+- Corporate Access, Investor Relations
 
-NOT front office (reject these):
-- Operations, middle office, back office
-- Technology / Software Engineering / Quant Dev
-- Compliance, Legal, Risk Management (non-trading)
-- HR, Finance, Accounting, Admin
-- Data Science (unless clearly investment-focused)
+EXCLUDE (is_front_office: false):
+- Pure software/tech engineering (unless explicitly on trading desk)
+- Operations, settlements, clearing, reconciliation, back office
+- Enterprise risk, compliance, legal
+- HR, Finance/Accounting, Admin
+- General data engineering
 
-Respond with ONLY a JSON object, nothing else:
-{
-  "is_front_office": true/false,
-  "function": "S&T" | "IBD" | "AM" | "PE" | "RM" | "PB" | null,
-  "level": "Analyst" | "Associate" | "VP" | "Director" | "MD" | "Partner" | null
-}
+When in doubt for roles at investment banks or hedge funds — lean INCLUDE.
+
+Respond ONLY with JSON, no other text:
+{"is_front_office": true/false, "function": "S&T"|"IBD"|"AM"|"PE"|"RM"|"PB"|null, "level": "Analyst"|"Associate"|"VP"|"Director"|"MD"|"Partner"|null}
 
 Title: ${title}
 Description: ${(description || '').replace(/<[^>]+>/g, '').slice(0, 500)}`;
@@ -90,7 +147,7 @@ Description: ${(description || '').replace(/<[^>]+>/g, '').slice(0, 500)}`;
   try {
     const res = await claude.messages.create({
       model: 'claude-haiku-4-5-20251001',
-      max_tokens: 100,
+      max_tokens: 120,
       messages: [{ role: 'user', content: prompt }]
     });
     const raw = res.content[0].text.trim().replace(/```json|```/g, '').trim();
@@ -107,41 +164,42 @@ Description: ${(description || '').replace(/<[^>]+>/g, '').slice(0, 500)}`;
 async function syncGreenhouse() {
   console.log('\n── Syncing Greenhouse ATS ──');
   let fetched = 0, added = 0, skipped = 0;
+  const seenNames = new Set();
 
   for (const firm of GREENHOUSE_FIRMS) {
     try {
-      const res  = await fetch(`https://boards-api.greenhouse.io/v1/boards/${firm.slug}/jobs?content=true`);
+      const res = await fetch(
+        `https://boards-api.greenhouse.io/v1/boards/${firm.slug}/jobs?content=true`,
+        { headers: { 'User-Agent': 'Mozilla/5.0' } }
+      );
       if (!res.ok) {
-        console.log(`  ✗ ${firm.name} (${firm.slug}): HTTP ${res.status} — slug may be wrong`);
+        if (!seenNames.has(firm.name)) {
+          console.log(`  ✗ ${firm.name} (${firm.slug}): HTTP ${res.status}`);
+        }
         continue;
       }
-      const data = await res.json();
+
+      const data  = await res.json();
       const roles = data.jobs || [];
+      seenNames.add(firm.name);
       console.log(`  ✓ ${firm.name}: ${roles.length} total postings`);
       fetched += roles.length;
 
       for (const role of roles) {
         const sourceId = `greenhouse-${role.id}`;
-
-        // Skip if already in DB
         const { data: existing } = await supabase
-          .from('jobs')
-          .select('id')
-          .eq('source_id', sourceId)
-          .maybeSingle();
+          .from('jobs').select('id').eq('source_id', sourceId).maybeSingle();
         if (existing) { skipped++; continue; }
 
-        // Classify with Claude
-        const classification = await classifyRole(role.title, role.content);
-        if (!classification.is_front_office) { skipped++; continue; }
+        const cl = await classifyRole(role.title, role.content);
+        if (!cl.is_front_office) { skipped++; continue; }
 
-        // Insert into Supabase
         await supabase.from('jobs').insert({
           title:           role.title,
           firm:            firm.name,
           location:        role.location?.name || null,
-          function:        classification.function,
-          level:           classification.level,
+          function:        cl.function,
+          level:           cl.level,
           description:     (role.content || '').replace(/<[^>]+>/g, '').slice(0, 1500),
           apply_url:       role.absolute_url,
           source:          'Greenhouse',
@@ -152,12 +210,9 @@ async function syncGreenhouse() {
         });
         added++;
         console.log(`    + Added: ${role.title}`);
-
-        // Rate limit: ~5 requests/sec to Claude
         await sleep(200);
       }
-
-      await sleep(300); // Pause between firms
+      await sleep(300);
     } catch (e) {
       console.error(`  ✗ ${firm.name} failed:`, e.message);
     }
@@ -168,89 +223,90 @@ async function syncGreenhouse() {
 }
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// INDEED RSS SYNC
-// No API key needed — uses public RSS feed
+// WORKDAY SYNC
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-async function syncIndeed() {
-  console.log('── Syncing Indeed RSS ──');
-  let added = 0;
+async function syncWorkday() {
+  console.log('── Syncing Workday (Major Banks & Funds) ──');
+  let totalAdded = 0;
 
-  for (const query of INDEED_QUERIES) {
-    try {
-      const url = `https://rss.indeed.com/rss?q=${query.q}&l=${query.loc}&sort=date&limit=20`;
-      const res = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0' } });
-      if (!res.ok) { console.log(`  ✗ Indeed query failed: ${res.status}`); continue; }
+  for (const firm of WORKDAY_FIRMS) {
+    let firmAdded = 0;
+    const apiUrl = `https://${firm.tenant}.wd5.myworkdayjobs.com/wday/cxs/${firm.tenant}/${firm.board}/jobs`;
 
-      const xml = await res.text();
-
-      // Simple XML parsing without external library
-      const items = xml.match(/<item>([\s\S]*?)<\/item>/g) || [];
-      console.log(`  Query "${query.q}": ${items.length} results`);
-
-      for (const item of items) {
-        const title    = (item.match(/<title><!\[CDATA\[(.*?)\]\]><\/title>/)  || [])[1] || '';
-        const link     = (item.match(/<link>(.*?)<\/link>/)                    || [])[1] || '';
-        const desc     = (item.match(/<description><!\[CDATA\[(.*?)\]\]>/)     || [])[1] || '';
-        const firm     = (item.match(/<source[^>]*>(.*?)<\/source>/)           || [])[1] || 'Unknown';
-        const pubDate  = (item.match(/<pubDate>(.*?)<\/pubDate>/)              || [])[1] || '';
-
-        if (!title || !link) continue;
-        const sourceId = `indeed-${Buffer.from(link).toString('base64').slice(0,32)}`;
-
-        // Skip if already in DB
-        const { data: existing } = await supabase
-          .from('jobs')
-          .select('id')
-          .eq('source_id', sourceId)
-          .maybeSingle();
-        if (existing) continue;
-
-        // Classify
-        const classification = await classifyRole(title, desc);
-        if (!classification.is_front_office) continue;
-
-        // Extract location from title (Indeed often includes it)
-        const locMatch = title.match(/[-–]\s*([A-Za-z\s]+,\s*[A-Z]{2})$/);
-        const location = locMatch ? locMatch[1] : query.loc.replace('+', ' ');
-
-        await supabase.from('jobs').insert({
-          title:           title.replace(/\s*-\s*[A-Za-z\s]+,\s*[A-Z]{2}$/, '').trim(),
-          firm:            firm,
-          location:        location,
-          function:        classification.function,
-          level:           classification.level,
-          description:     desc.replace(/<[^>]+>/g, '').slice(0, 1500),
-          apply_url:       link,
-          source:          'Indeed',
-          source_id:       sourceId,
-          is_front_office: true,
-          is_approved:     true,
-          posted_at:       pubDate ? new Date(pubDate).toISOString() : new Date().toISOString(),
+    for (const term of WORKDAY_SEARCH_TERMS.slice(0, 6)) {
+      try {
+        const res = await fetch(apiUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
+          },
+          body: JSON.stringify({ appliedFacets: {}, limit: 20, offset: 0, searchText: term }),
         });
-        added++;
-        await sleep(200);
-      }
 
-      await sleep(500); // Between Indeed queries
-    } catch (e) {
-      console.error(`  ✗ Indeed query failed:`, e.message);
+        if (!res.ok) continue;
+        const data  = await res.json();
+        const roles = data.jobPostings || [];
+
+        for (const role of roles) {
+          const extId    = role.externalPath?.split('/').pop() || role.bulletFields?.join('-') || role.title;
+          const sourceId = `workday-${firm.tenant}-${extId}`.slice(0, 200);
+
+          const { data: existing } = await supabase
+            .from('jobs').select('id').eq('source_id', sourceId).maybeSingle();
+          if (existing) continue;
+
+          const cl = await classifyRole(role.title, role.jobDescription || role.briefDescription || '');
+          if (!cl.is_front_office) continue;
+
+          const applyUrl = `https://${firm.tenant}.wd5.myworkdayjobs.com/${firm.board}/job${role.externalPath || ''}`;
+
+          await supabase.from('jobs').insert({
+            title:           role.title,
+            firm:            firm.name,
+            location:        role.locationsText || null,
+            function:        cl.function,
+            level:           cl.level,
+            description:     (role.briefDescription || '').slice(0, 1500),
+            apply_url:       applyUrl,
+            source:          'Workday',
+            source_id:       sourceId,
+            is_front_office: true,
+            is_approved:     true,
+            posted_at:       role.postedOn ? new Date(role.postedOn).toISOString() : new Date().toISOString(),
+          });
+          firmAdded++;
+          totalAdded++;
+          console.log(`    + Added: ${role.title} @ ${firm.name}`);
+          await sleep(200);
+        }
+        await sleep(500);
+      } catch (e) {
+        // skip failed search terms silently
+      }
     }
+
+    if (firmAdded > 0) {
+      console.log(`  ✓ ${firm.name}: ${firmAdded} roles added`);
+    } else {
+      console.log(`  ~ ${firm.name}: no new roles`);
+    }
+    await sleep(1000);
   }
 
-  console.log(`  Indeed: ${added} new roles added\n`);
-  return added;
+  console.log(`  Workday: ${totalAdded} new roles added\n`);
+  return totalAdded;
 }
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// CLEANUP — Remove expired listings (60+ days old)
+// CLEANUP
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 async function cleanupExpired() {
   const cutoff = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString();
   const { count } = await supabase
-    .from('jobs')
-    .delete({ count: 'exact' })
-    .lt('posted_at', cutoff)
-    .eq('is_featured', false);
+    .from('jobs').delete({ count: 'exact' })
+    .lt('posted_at', cutoff).eq('is_featured', false);
   console.log(`── Cleanup: removed ${count || 0} expired listings\n`);
 }
 
@@ -259,14 +315,10 @@ async function cleanupExpired() {
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 async function main() {
   console.log(`\n[${new Date().toISOString()}] Starting Front Office Jobs sync...\n`);
-
-  const ghAdded     = await syncGreenhouse();
-  const indeedAdded = await syncIndeed();
+  const ghAdded = await syncGreenhouse();
+  const wdAdded = await syncWorkday();
   await cleanupExpired();
-
-  console.log(`\n✓ Sync complete. Added ${ghAdded + indeedAdded} new front office roles.`);
+  console.log(`\n✓ Sync complete. Added ${ghAdded + wdAdded} new front office roles.`);
 }
-
-const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 main().catch(e => { console.error('Fatal error:', e); process.exit(1); });
