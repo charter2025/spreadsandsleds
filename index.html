@@ -909,7 +909,9 @@ async function loadTicker() {
         <span class="ticker-arrow ${up?'up':'dn'}">${up?'▲':'▼'}</span>
         <span class="ticker-pct ${up?'up':'dn'}">${pctStr}</span>
       </span>`;
-    }).join('');
+    }).forEach(el => fragment.appendChild(el));
+  list.innerHTML = '';
+  list.appendChild(fragment);
 
     const track = document.getElementById('ticker-track');
     track.innerHTML = makeItems() + makeItems(); // duplicate for loop
@@ -1037,36 +1039,40 @@ function renderJobs() {
       .trim();
   };
 
-  list.innerHTML = jobs.map(j => {
+  const fragment = document.createDocumentFragment();
+  jobs.map(j => {
     const desc = cleanDesc(j.description);
     const snippet = desc.length > 260 ? desc.slice(0, 260) + '…' : desc;
     const cardClass = `job-card ${j.is_featured ? 'featured' : isNew(j) ? 'isnew' : ''}`;
     const url = j.apply_url && j.apply_url !== '#' ? j.apply_url : null;
 
-    return `
-    <div class="${cardClass}" ${url ? `onclick="window.open('${url}','_blank')" style="cursor:pointer"` : ''}>
-      <div class="job-header">
-        <div class="job-title">${j.title || ''}</div>
-        ${j.comp ? `<div class="job-comp">${j.comp}</div>` : ''}
-      </div>
-      <div class="job-meta">
-        <span class="job-firm">${j.firm || ''}</span>
-        ${j.location ? `<span class="sep">|</span><span class="job-loc">${j.location}</span>` : ''}
-        ${j.function ? `<span class="tag tag-type">${FN_LABEL[j.function]||j.function}</span>` : ''}
-        ${j.level    ? `<span class="tag tag-level">${j.level}</span>` : ''}
-        ${isNew(j)   ? `<span class="tag tag-new">New</span>` : ''}
-        ${j.is_hot   ? `<span class="tag tag-hot">Hot</span>` : ''}
-        ${j.source   ? `<span class="tag tag-src">${j.source}</span>` : ''}
-      </div>
-      ${snippet ? `<div class="job-desc">${snippet}</div>` : ''}
-      <div class="job-footer">
-        <span class="job-date">${timeAgo(j.posted_at)}</span>
-        ${url
-          ? `<a class="apply-btn" href="${url}" target="_blank" rel="noopener" onclick="event.stopPropagation()">Apply →</a>`
-          : `<button class="apply-btn">Apply →</button>`}
-      </div>
-    </div>`;
-  }).join('');
+    const card = document.createElement('div');
+    card.className = cardClass;
+    card.style.cssText = 'width:100%;box-sizing:border-box;display:block;float:none;';
+    if (url) { card.style.cursor = 'pointer'; card.onclick = () => window.open(url, '_blank'); }
+    card.innerHTML = '<div class="job-header">' +
+      '<div class="job-title">' + (j.title || '') + '</div>' +
+      (j.comp ? '<div class="job-comp">' + j.comp + '</div>' : '') +
+      '</div>' +
+      '<div class="job-meta">' +
+      '<span class="job-firm">' + (j.firm || '') + '</span>' +
+      (j.location ? '<span class="sep">|</span><span class="job-loc">' + j.location + '</span>' : '') +
+      (j.function ? '<span class="tag tag-type">' + (FN_LABEL[j.function]||j.function) + '</span>' : '') +
+      (j.level    ? '<span class="tag tag-level">' + j.level + '</span>' : '') +
+      (isNew(j)   ? '<span class="tag tag-new">New</span>' : '') +
+      (j.is_hot   ? '<span class="tag tag-hot">Hot</span>' : '') +
+      (j.source   ? '<span class="tag tag-src">' + j.source + '</span>' : '') +
+      '</div>' +
+      (snippet ? '<div class="job-desc">' + snippet + '</div>' : '') +
+      '<div class="job-footer">' +
+      '<span class="job-date">' + timeAgo(j.posted_at) + '</span>' +
+      (url ? '<a class="apply-btn" href="' + url + '" target="_blank" rel="noopener" onclick="event.stopPropagation()">Apply →</a>'
+           : '<button class="apply-btn">Apply →</button>') +
+      '</div>';
+    return card;
+  }).forEach(el => fragment.appendChild(el));
+  list.innerHTML = '';
+  list.appendChild(fragment);
 }
 
 function updateStats() {
