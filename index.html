@@ -903,22 +903,14 @@ async function loadTicker() {
     const makeItems = () => valid.map(q => {
       const up = q.pct >= 0;
       const pctStr = (up ? '+' : '') + q.pct.toFixed(2) + '%';
-      return `<span class="ticker-item">
-        <strong>${q.sym}</strong>
-        $${q.price.toFixed(2)}
-        <span class="ticker-arrow ${up?'up':'dn'}">${up?'▲':'▼'}</span>
-        <span class="ticker-pct ${up?'up':'dn'}">${pctStr}</span>
-      </span>`;
-    }).forEach(el => fragment.appendChild(el));
-  list.innerHTML = '';
-  list.appendChild(fragment);
+      return `<span class="ticker-item"><strong>${q.sym}</strong> $${q.price.toFixed(2)} <span class="ticker-arrow ${up?'up':'dn'}">${up?'▲':'▼'}</span><span class="ticker-pct ${up?'up':'dn'}">${pctStr}</span></span>`;
+    }).join('');
 
     const track = document.getElementById('ticker-track');
-    track.innerHTML = makeItems() + makeItems(); // duplicate for loop
+    track.innerHTML = makeItems() + makeItems(); // duplicate for seamless loop
 
-    // Adjust animation speed based on content width
-    const itemCount = valid.length;
-    track.style.animationDuration = (itemCount * 5) + 's';
+    // Adjust animation speed based on item count
+    track.style.animationDuration = (valid.length * 5) + 's';
 
   } catch(e) {
     console.warn('Ticker load failed:', e);
