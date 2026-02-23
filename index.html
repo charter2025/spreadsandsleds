@@ -216,6 +216,11 @@
     overflow: hidden;
     width: 100%;
   }
+  .main > main {
+    min-width: 0;
+    width: 100%;
+    overflow-x: hidden;
+  }
 
   /* ── SIDEBAR ── */
   .sidebar {
@@ -593,6 +598,7 @@
   /* ── RESPONSIVE ── */
   @media (max-width: 860px) {
     .main { grid-template-columns: 1fr; }
+    .main > main { width: 100%; max-width: 100%; }
     .sidebar { display: none; }
     .mobile-bar { display: flex; }
     header { grid-template-columns: auto 1fr; }
