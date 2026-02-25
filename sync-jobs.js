@@ -379,7 +379,7 @@ async function syncMuse() {
           source: 'The Muse',
           posted_at: r.publication_date ? new Date(r.publication_date).toISOString() : new Date().toISOString(),
         }));
-        added += await insertDirect(mapped, `Muse/${cat}`);
+        added += await insertClassified(mapped, `Muse/${cat}`);
         await sleep(200);
       } catch(e) { console.log(`    Error: ${e.message}`); break; }
     }
@@ -395,7 +395,7 @@ async function syncMuse() {
     'T. Rowe Price','Wellington Management','Fidelity Investments','Vanguard',
   ];
   for (const bank of banks) {
-    for (let page = 0; page < 8; page++) {
+    for (let page = 0; page < 50; page++) {
       try {
         const res = await fetchJ(
           `https://www.themuse.com/api/public/jobs?company=${encodeURIComponent(bank)}&page=${page}`,
@@ -406,7 +406,7 @@ async function syncMuse() {
         const results = d.results || [];
         if (!results.length) break;
         if (page === 0) console.log(`    ✓ ${bank}: ${d.total} total`);
-        added += await insertDirect(results.map(r => ({
+        added += await insertClassified(results.map(r => ({
           source_id: `muse-${r.id}`, title: r.name||'', firm: bank,
           location: r.locations?.map(l=>l.name).join(', ')||null,
           description: (r.contents||'').replace(/<[^>]+>/g,' ').trim().slice(0,1500),
@@ -509,7 +509,7 @@ async function syncAdzuna() {
   for (const q of queries) {
     for (let page = 1; page <= 5; page++) {
       try {
-        const url = `https://api.adzuna.com/v1/api/jobs/us/search/${page}?app_id=${ADZUNA_APP_ID}&app_key=${ADZUNA_API_KEY_VAL}&what=${encodeURIComponent(q)}&results_per_page=50&category=finance-jobs&sort_by=date&max_days_old=60`;
+        const url = `https://api.adzuna.com/v1/api/jobs/us/search/${page}?app_id=${ADZUNA_APP_ID}&app_key=${ADZUNA_API_KEY_VAL}&what=${encodeURIComponent(q)}&results_per_page=50&sort_by=date&max_days_old=60`;
         const res = await fetchJ(url, {}, 9000);
         if (!res.ok) {
           const txt = await res.text();
