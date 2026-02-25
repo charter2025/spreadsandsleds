@@ -721,10 +721,33 @@
       </div>
 
       <div class="sidebar-section">
+        <div class="sidebar-label">Location</div>
+        <div class="sidebar-item active" onclick="setLoc('all');setSideActive(this)"><span class="sidebar-item-name">All Locations</span><span class="sidebar-count" id="sc-loc-all">—</span></div>
+        <div class="sidebar-item" onclick="setLoc('new-york');setSideActive(this)"><span class="sidebar-item-name">🗽 New York</span><span class="sidebar-count" id="sc-loc-ny">—</span></div>
+        <div class="sidebar-item" onclick="setLoc('london');setSideActive(this)"><span class="sidebar-item-name">🇬🇧 London</span><span class="sidebar-count" id="sc-loc-lon">—</span></div>
+        <div class="sidebar-item" onclick="setLoc('hong-kong');setSideActive(this)"><span class="sidebar-item-name">🇭🇰 Hong Kong</span><span class="sidebar-count" id="sc-loc-hk">—</span></div>
+        <div class="sidebar-item" onclick="setLoc('singapore');setSideActive(this)"><span class="sidebar-item-name">🇸🇬 Singapore</span><span class="sidebar-count" id="sc-loc-sg">—</span></div>
+        <div class="sidebar-item" onclick="setLoc('chicago');setSideActive(this)"><span class="sidebar-item-name">🌆 Chicago</span><span class="sidebar-count" id="sc-loc-chi">—</span></div>
+        <div class="sidebar-item" onclick="setLoc('boston');setSideActive(this)"><span class="sidebar-item-name">🦞 Boston</span><span class="sidebar-count" id="sc-loc-bos">—</span></div>
+        <div class="sidebar-item" onclick="setLoc('san-francisco');setSideActive(this)"><span class="sidebar-item-name">🌉 San Francisco</span><span class="sidebar-count" id="sc-loc-sf">—</span></div>
+        <div class="sidebar-item" onclick="setLoc('dallas');setSideActive(this)"><span class="sidebar-item-name">🤠 Dallas</span><span class="sidebar-count" id="sc-loc-dal">—</span></div>
+        <div class="sidebar-item" onclick="setLoc('miami');setSideActive(this)"><span class="sidebar-item-name">🌴 Miami</span><span class="sidebar-count" id="sc-loc-mia">—</span></div>
+        <div class="sidebar-item" onclick="setLoc('zurich');setSideActive(this)"><span class="sidebar-item-name">🇨🇭 Zurich</span><span class="sidebar-count" id="sc-loc-zur">—</span></div>
+        <div class="sidebar-item" onclick="setLoc('frankfurt');setSideActive(this)"><span class="sidebar-item-name">🇩🇪 Frankfurt</span><span class="sidebar-count" id="sc-loc-fra">—</span></div>
+        <div class="sidebar-item" onclick="setLoc('paris');setSideActive(this)"><span class="sidebar-item-name">🇫🇷 Paris</span><span class="sidebar-count" id="sc-loc-par">—</span></div>
+        <div class="sidebar-item" onclick="setLoc('tokyo');setSideActive(this)"><span class="sidebar-item-name">🇯🇵 Tokyo</span><span class="sidebar-count" id="sc-loc-tok">—</span></div>
+        <div class="sidebar-item" onclick="setLoc('dubai');setSideActive(this)"><span class="sidebar-item-name">🇦🇪 Dubai</span><span class="sidebar-count" id="sc-loc-dxb">—</span></div>
+        <div class="sidebar-item" onclick="setLoc('sydney');setSideActive(this)"><span class="sidebar-item-name">🇦🇺 Sydney</span><span class="sidebar-count" id="sc-loc-syd">—</span></div>
+      </div>
+
+      <div class="sidebar-section">
         <div class="sidebar-label">Source</div>
         <div class="sidebar-item" onclick="setSource('all');setSideActive(this)"><span class="sidebar-item-name">All Sources</span></div>
         <div class="sidebar-item" onclick="setSource('Greenhouse');setSideActive(this)"><span class="sidebar-item-name">Greenhouse ATS</span></div>
-        <div class="sidebar-item" onclick="setSource('Indeed');setSideActive(this)"><span class="sidebar-item-name">Indeed</span></div>
+        <div class="sidebar-item" onclick="setSource('Workday');setSideActive(this)"><span class="sidebar-item-name">Workday</span></div>
+        <div class="sidebar-item" onclick="setSource('eFinancialCareers');setSideActive(this)"><span class="sidebar-item-name">eFinancialCareers</span></div>
+        <div class="sidebar-item" onclick="setSource('Lever');setSideActive(this)"><span class="sidebar-item-name">Lever ATS</span></div>
+        <div class="sidebar-item" onclick="setSource('Adzuna');setSideActive(this)"><span class="sidebar-item-name">Adzuna</span></div>
         <div class="sidebar-item" onclick="setSource('Submitted');setSideActive(this)"><span class="sidebar-item-name">Firm Submitted</span></div>
       </div>
     </div>
@@ -879,7 +902,28 @@ let allJobs     = [];
 let filterType  = 'all';
 let filterLevel = 'all';
 let filterSrc   = 'all';
+let filterLoc   = 'all';
 let searchTerm  = '';
+
+// Finance hub → keywords to match against job location string
+const HUB_KEYWORDS = {
+  'new-york':   ['new york', 'nyc', 'manhattan', 'brooklyn', 'jersey city', 'greenwich', 'stamford', 'westport'],
+  'london':     ['london', 'canary wharf', 'city of london'],
+  'hong-kong':  ['hong kong', 'hk'],
+  'singapore':  ['singapore'],
+  'chicago':    ['chicago', 'il'],
+  'boston':     ['boston', 'cambridge, ma'],
+  'san-francisco': ['san francisco', 'sf', 'palo alto', 'menlo park', 'bay area'],
+  'los-angeles':['los angeles', 'la,', 'santa monica', 'century city'],
+  'dallas':     ['dallas', 'fort worth', 'tx'],
+  'miami':      ['miami', 'brickell', 'coral gables'],
+  'zurich':     ['zurich', 'zürich'],
+  'frankfurt':  ['frankfurt'],
+  'paris':      ['paris'],
+  'tokyo':      ['tokyo'],
+  'sydney':     ['sydney'],
+  'dubai':      ['dubai', 'abu dhabi', 'uae'],
+};
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // LIVE TICKER — Finnhub
@@ -985,7 +1029,9 @@ function getFiltered() {
                        || (j.firm||'').toLowerCase().includes(s)
                        || (j.desk||'').toLowerCase().includes(s)
                        || (j.location||'').toLowerCase().includes(s);
-    return typeOk && levelOk && srcOk && searchOk;
+    const loc = (j.location||'').toLowerCase();
+    const locOk = filterLoc === 'all' || (HUB_KEYWORDS[filterLoc]||[]).some(k => loc.includes(k));
+    return typeOk && levelOk && srcOk && searchOk && locOk;
   });
 }
 
@@ -1068,13 +1114,28 @@ function renderJobs() {
 }
 
 function updateStats() {
+  // Location hub counts
+  const locMap = {
+    'all':'sc-loc-all','new-york':'sc-loc-ny','london':'sc-loc-lon',
+    'hong-kong':'sc-loc-hk','singapore':'sc-loc-sg','chicago':'sc-loc-chi',
+    'boston':'sc-loc-bos','san-francisco':'sc-loc-sf','dallas':'sc-loc-dal',
+    'miami':'sc-loc-mia','zurich':'sc-loc-zur','frankfurt':'sc-loc-fra',
+    'paris':'sc-loc-par','tokyo':'sc-loc-tok','dubai':'sc-loc-dxb','sydney':'sc-loc-syd',
+  };
+  Object.entries(locMap).forEach(([hub, elId]) => {
+    const el = document.getElementById(elId); if (!el) return;
+    if (hub === 'all') { el.textContent = allJobs.length; return; }
+    const kws = HUB_KEYWORDS[hub] || [];
+    el.textContent = allJobs.filter(j => kws.some(k => (j.location||'').toLowerCase().includes(k))).length || '';
+  });
+
+  // Job stats
   const total  = allJobs.length;
   const firms  = new Set(allJobs.map(j => j.firm)).size;
   const today  = allJobs.filter(j => j.posted_at && (Date.now()-new Date(j.posted_at).getTime()) < 86400000).length;
   const senior = allJobs.filter(j => SENIOR_LEVELS.some(s => (j.level||'').toLowerCase().includes(s.toLowerCase()))).length;
   const pctSen = total ? Math.round(senior/total*100) : 0;
 
-  // Top function
   const fnCounts = {};
   allJobs.forEach(j => { fnCounts[j.function] = (fnCounts[j.function]||0)+1; });
   const topFn = Object.entries(fnCounts).sort((a,b)=>b[1]-a[1])[0];
@@ -1086,7 +1147,7 @@ function updateStats() {
   document.getElementById('stat-senior').textContent = pctSen + '%';
   document.getElementById('stat-synced').textContent = new Date().toLocaleDateString('en-US',{month:'short',day:'numeric'});
 
-  // Sidebar counts
+  // Sidebar function counts
   const counts = { all: total, 'S&T':0, IBD:0, AM:0, PE:0, RM:0, PB:0 };
   const levels = { junior:0, mid:0, senior:0 };
   allJobs.forEach(j => {
@@ -1095,8 +1156,8 @@ function updateStats() {
     if (matchLevel(j,'mid'))    levels.mid++;
     if (matchLevel(j,'senior')) levels.senior++;
   });
-  const ids = { all:'sc-all','S&T':'sc-st',IBD:'sc-ibd',AM:'sc-am',PE:'sc-pe',RM:'sc-rm',PB:'sc-pb' };
-  Object.entries(ids).forEach(([k,id]) => {
+  const fnIds = { all:'sc-all','S&T':'sc-st',IBD:'sc-ibd',AM:'sc-am',PE:'sc-pe',RM:'sc-rm',PB:'sc-pb' };
+  Object.entries(fnIds).forEach(([k,id]) => {
     const el = document.getElementById(id);
     if (el) el.textContent = counts[k] ?? '—';
   });
@@ -1120,6 +1181,9 @@ function setFilter(type, btn) {
 }
 function setLevel(level) { filterLevel = level; renderJobs(); }
 function setSource(src)  { filterSrc = src; renderJobs(); }
+function setLoc(loc)     { filterLoc = loc; renderJobs(); }
+function setLoc(loc)     { filterLoc = loc; renderJobs(); }
+function setLoc(loc)     { filterLoc = loc; renderJobs(); }
 function setSearch(val)  { searchTerm = val; renderJobs(); }
 function setSideActive(el) {
   el.closest('.sidebar-section,.sidebar-inner')
