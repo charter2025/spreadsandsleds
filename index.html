@@ -619,6 +619,39 @@
     .stat { padding: 10px 12px; min-width: 90px; }
     .stat-value { font-size: 15px; }
   }
+
+  /* ── VIEW TABS ── */
+  .view-tabs {
+    display: flex;
+    gap: 2px;
+    padding: 8px 16px 0;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+  }
+  .view-tab {
+    padding: 8px 20px;
+    background: transparent;
+    border: 1px solid transparent;
+    border-bottom: none;
+    color: var(--dim);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: all 0.15s;
+    position: relative;
+    bottom: -1px;
+  }
+  .view-tab:hover { color: var(--text); }
+  .view-tab.active {
+    color: var(--accent);
+    border-color: var(--border);
+    border-bottom-color: var(--surface);
+    background: var(--surface);
+  }
+
 </style>
 </head>
 <body>
@@ -758,6 +791,10 @@
     <div class="pinned-banner">
       <span class="pinned-label">▲ Aggregated</span>
       <span class="pinned-text">Sourced daily from Greenhouse ATS · Indeed · Firm submissions · Classified by AI</span>
+    </div>
+    <div class="view-tabs">
+      <button class="view-tab active" id="tab-fo" onclick="setViewMode('fo')">⚡ Front Office</button>
+      <button class="view-tab" id="tab-all" onclick="setViewMode('all')">All Roles</button>
     </div>
     <div id="job-list">
       <div class="state-msg"><div class="spin">◌</div><br>Loading roles...</div>
@@ -904,6 +941,7 @@ let filterLevel = 'all';
 let filterSrc   = 'all';
 let filterLoc   = 'all';
 let searchTerm  = '';
+let viewMode    = 'fo'; // 'fo' = front office only, 'all' = all roles
 
 // Finance hub → keywords to match against job location string
 const HUB_KEYWORDS = {
@@ -984,7 +1022,7 @@ async function loadJobs() {
     const pageSize = 1000;
     while (true) {
       const res = await fetch(
-        `${SUPABASE_URL}/rest/v1/jobs?is_approved=eq.true&is_front_office=eq.true&order=posted_at.desc&limit=${pageSize}&offset=${offset}`,
+        `${SUPABASE_URL}/rest/v1/jobs?is_approved=eq.true&order=posted_at.desc&limit=${pageSize}&offset=${offset}`,
         { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}`, 'Range-Unit': 'items' } }
       );
       if (!res.ok) throw new Error('Supabase fetch failed');
@@ -1022,6 +1060,7 @@ function matchLevel(job, filter) {
 function getFiltered() {
   const s = searchTerm.toLowerCase();
   return allJobs.filter(j => {
+    const foOk    = viewMode === 'all' || j.is_front_office === true;
     const typeOk  = filterType === 'all' || j.function === filterType;
     const levelOk = matchLevel(j, filterLevel);
     const srcOk   = filterSrc === 'all' || j.source === filterSrc;
@@ -1031,7 +1070,7 @@ function getFiltered() {
                        || (j.location||'').toLowerCase().includes(s);
     const loc = (j.location||'').toLowerCase();
     const locOk = filterLoc === 'all' || (HUB_KEYWORDS[filterLoc]||[]).some(k => loc.includes(k));
-    return typeOk && levelOk && srcOk && searchOk && locOk;
+    return foOk && typeOk && levelOk && srcOk && searchOk && locOk;
   });
 }
 
@@ -1182,8 +1221,13 @@ function setFilter(type, btn) {
 function setLevel(level) { filterLevel = level; renderJobs(); }
 function setSource(src)  { filterSrc = src; renderJobs(); }
 function setLoc(loc)     { filterLoc = loc; renderJobs(); }
-function setLoc(loc)     { filterLoc = loc; renderJobs(); }
-function setLoc(loc)     { filterLoc = loc; renderJobs(); }
+function setViewMode(mode) {
+  viewMode = mode;
+  document.getElementById('tab-fo').classList.toggle('active', mode === 'fo');
+  document.getElementById('tab-all').classList.toggle('active', mode === 'all');
+  renderJobs();
+}
+
 function setSearch(val)  { searchTerm = val; renderJobs(); }
 function setSideActive(el) {
   el.closest('.sidebar-section,.sidebar-inner')
