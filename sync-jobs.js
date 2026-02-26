@@ -93,13 +93,34 @@ async function classifyBatch(roles) {
     const res = await claude.messages.create({
       model: 'claude-haiku-4-5-20251001', max_tokens: 1200,
       messages: [{ role: 'user', content:
-`Classify as front office finance (fo:true) or not (fo:false).
-INCLUDE: Trading, IB/M&A/DCM/ECM, Sales & Trading, Research, Portfolio Mgmt, Asset Mgmt,
-Private Equity, Hedge Fund investment roles, Quant Research (NOT engineering),
-Wealth Mgmt, Structured Finance, Prime Brokerage, Market/Credit Risk (front office).
-EXCLUDE: Software/data engineer, devops, operations, compliance, legal, HR,
-accounting, IT, marketing, back/middle office, quant dev/engineer.
-One JSON per line: {"i":0,"fo":true,"fn":"S&T","lv":"Analyst"}
+`Be STRICT. When in doubt, fo:false.
+
+FRONT OFFICE (fo:true) ONLY — roles that make investment decisions or generate revenue:
+Trader, Sales Trader, Market Maker, Prop Trader, Vol Trader, Flow Trader
+Institutional Sales, Coverage Banker, Derivatives Sales, FX Sales
+M&A, DCM, ECM, LevFin, Restructuring, Sponsor Coverage, Industry Coverage
+Equity Research, Credit Research, Macro Strategist, Fixed Income Research, Rates Strategist
+Portfolio Manager, Fund Manager, Investment Manager, CIO, Allocator, Investment Analyst
+PE Associate/Analyst, Growth Equity, VC (investment roles only)
+Quantitative Researcher, Quant Strategist, Alpha Researcher, Systematic Trader
+Private Banker, Wealth Advisor, Family Office Investment, Relationship Manager (investments)
+CLO/ABS/MBS/Structured Finance Analyst, High Yield, Distressed Debt, Direct Lending
+
+ALWAYS fo:false — no exceptions:
+- Tech/Engineering: software engineer, developer, SWE, DevOps, SRE, IT, quant developer/engineer, product manager, cybersecurity, data engineer, ML engineer, infrastructure
+- Operations/Middle office: trade support, settlements, reconciliation, fund accounting, collateral, custody, KYC, AML, onboarding, treasury ops, trade processing
+- Risk (non-trading): operational risk, model risk, model validation, regulatory risk, enterprise risk, internal audit, SOX
+- Compliance, legal, paralegal, attorney, counsel
+- HR, recruiting, talent acquisition, people operations
+- Finance/accounting, FP&A, controller, tax, audit
+- Marketing, communications, PR, events, brand
+- Executive assistant, admin assistant, office manager, receptionist, facilities, administrative
+- Project manager, program manager, business analyst (non-investment), data analyst, BI, reporting
+- Investor relations (corporate IR), corporate strategy, chief of staff
+- Vague titles alone: just "Analyst", "Associate", "VP", "Manager", "Specialist", "Consultant"
+
+One JSON per line, no markdown:
+{"i":0,"fo":true,"fn":"S&T","lv":"Analyst"}
 fn: S&T|IBD|AM|PE|RM|PB|QR|null  lv: Analyst|Associate|VP|Director|MD|Partner|null
 ${list}` }]
     });
