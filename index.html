@@ -323,14 +323,9 @@
     margin-bottom: 7px;
   }
   .job-title { font-size: 14px; font-weight: 600; color: var(--text); flex: 1; line-height: 1.35; }
-  .job-comp {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 11px;
-    color: var(--accent);
-    font-weight: 600;
-    white-space: nowrap;
-    flex-shrink: 0;
-  }
+.job-comp { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--accent); white-space: nowrap; }
+  .job-comp.comp-est { color: var(--dim); }
+  .comp-label { font-size: 9px; opacity: 0.7; text-transform: uppercase; letter-spacing: 0.05em; }
 
   .job-meta {
     display: flex;
@@ -601,6 +596,8 @@
     .main > main { width: 100%; max-width: 100%; }
     .sidebar { display: none; }
     .mobile-bar { display: flex; }
+    .mobile-loc-row { display: flex; }
+    .mobile-search-wrap { display: block; }
     header { grid-template-columns: auto 1fr; }
     .header-meta { display: none; }
     .header-right { flex-direction: row; align-items: center; }
@@ -652,6 +649,57 @@
     background: var(--surface);
   }
 
+
+  /* ── MOBILE LOCATION PILLS ── */
+  .mobile-loc-row {
+    display: none;
+    overflow-x: auto;
+    padding: 8px 12px;
+    gap: 6px;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .mobile-loc-row::-webkit-scrollbar { display: none; }
+  .loc-pill {
+    flex-shrink: 0;
+    padding: 5px 12px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--dim);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.15s;
+    border-radius: 2px;
+  }
+  .loc-pill:hover { color: var(--text); border-color: var(--border-light); }
+  .loc-pill.active { color: var(--accent); border-color: var(--accent); background: rgba(240,180,41,0.07); }
+
+  /* ── MOBILE SEARCH BAR ── */
+  .mobile-search-wrap {
+    display: none;
+    padding: 8px 12px;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+  }
+  .mobile-search-input {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    padding: 8px 12px;
+    outline: none;
+    border-radius: 2px;
+  }
+  .mobile-search-input::placeholder { color: var(--muted); }
+  .mobile-search-input:focus { border-color: var(--accent); }
+
 </style>
 </head>
 <body>
@@ -684,6 +732,27 @@
 <div class="mobile-bar">
   <button class="hamburger" onclick="openDrawer()">☰ Filters</button>
   <button class="btn-primary" onclick="openModal()">+ Post</button>
+</div>
+<div class="mobile-loc-row" id="mobile-loc-row">
+  <button class="loc-pill active" onclick="setMobileLoc('all',this)">🌐 All</button>
+  <button class="loc-pill" onclick="setMobileLoc('new-york',this)">🗽 New York</button>
+  <button class="loc-pill" onclick="setMobileLoc('london',this)">🇬🇧 London</button>
+  <button class="loc-pill" onclick="setMobileLoc('hong-kong',this)">🇭🇰 Hong Kong</button>
+  <button class="loc-pill" onclick="setMobileLoc('singapore',this)">🇸🇬 Singapore</button>
+  <button class="loc-pill" onclick="setMobileLoc('chicago',this)">🌆 Chicago</button>
+  <button class="loc-pill" onclick="setMobileLoc('boston',this)">🦞 Boston</button>
+  <button class="loc-pill" onclick="setMobileLoc('san-francisco',this)">🌉 San Francisco</button>
+  <button class="loc-pill" onclick="setMobileLoc('dallas',this)">🤠 Dallas</button>
+  <button class="loc-pill" onclick="setMobileLoc('miami',this)">🌴 Miami</button>
+  <button class="loc-pill" onclick="setMobileLoc('zurich',this)">🇨🇭 Zurich</button>
+  <button class="loc-pill" onclick="setMobileLoc('frankfurt',this)">🇩🇪 Frankfurt</button>
+  <button class="loc-pill" onclick="setMobileLoc('paris',this)">🇫🇷 Paris</button>
+  <button class="loc-pill" onclick="setMobileLoc('tokyo',this)">🇯🇵 Tokyo</button>
+  <button class="loc-pill" onclick="setMobileLoc('dubai',this)">🇦🇪 Dubai</button>
+  <button class="loc-pill" onclick="setMobileLoc('sydney',this)">🇦🇺 Sydney</button>
+</div>
+<div class="mobile-search-wrap">
+  <input class="mobile-search-input" type="text" placeholder="🔍  Search roles, firms, locations..." oninput="setSearch(this.value)" />
 </div>
 
 <!-- ── FILTER TABS ── -->
@@ -913,9 +982,26 @@
       </div>
       <div class="sidebar-section">
         <div class="sidebar-label">Seniority</div>
+        <div class="sidebar-item" onclick="setLevel('all');closeDrawer()"><span class="sidebar-item-name">All Levels</span></div>
         <div class="sidebar-item" onclick="setLevel('junior');closeDrawer()"><span class="sidebar-item-name">Analyst / Associate</span></div>
         <div class="sidebar-item" onclick="setLevel('mid');closeDrawer()"><span class="sidebar-item-name">VP / Director</span></div>
         <div class="sidebar-item" onclick="setLevel('senior');closeDrawer()"><span class="sidebar-item-name">MD / Partner</span></div>
+      </div>
+      <div class="sidebar-section">
+        <div class="sidebar-label">Location</div>
+        <div class="sidebar-item" onclick="setLoc('all');closeDrawer()"><span class="sidebar-item-name">🌐 All Locations</span></div>
+        <div class="sidebar-item" onclick="setLoc('new-york');closeDrawer()"><span class="sidebar-item-name">🗽 New York</span></div>
+        <div class="sidebar-item" onclick="setLoc('london');closeDrawer()"><span class="sidebar-item-name">🇬🇧 London</span></div>
+        <div class="sidebar-item" onclick="setLoc('hong-kong');closeDrawer()"><span class="sidebar-item-name">🇭🇰 Hong Kong</span></div>
+        <div class="sidebar-item" onclick="setLoc('singapore');closeDrawer()"><span class="sidebar-item-name">🇸🇬 Singapore</span></div>
+        <div class="sidebar-item" onclick="setLoc('chicago');closeDrawer()"><span class="sidebar-item-name">🌆 Chicago</span></div>
+        <div class="sidebar-item" onclick="setLoc('boston');closeDrawer()"><span class="sidebar-item-name">🦞 Boston</span></div>
+        <div class="sidebar-item" onclick="setLoc('san-francisco');closeDrawer()"><span class="sidebar-item-name">🌉 San Francisco</span></div>
+        <div class="sidebar-item" onclick="setLoc('dallas');closeDrawer()"><span class="sidebar-item-name">🤠 Dallas</span></div>
+        <div class="sidebar-item" onclick="setLoc('miami');closeDrawer()"><span class="sidebar-item-name">🌴 Miami</span></div>
+        <div class="sidebar-item" onclick="setLoc('dubai');closeDrawer()"><span class="sidebar-item-name">🇦🇪 Dubai</span></div>
+        <div class="sidebar-item" onclick="setLoc('tokyo');closeDrawer()"><span class="sidebar-item-name">🇯🇵 Tokyo</span></div>
+        <div class="sidebar-item" onclick="setLoc('london');closeDrawer()"><span class="sidebar-item-name">🇨🇭 Zurich</span></div>
       </div>
     </div>
   </div>
@@ -1087,6 +1173,57 @@ function timeAgo(dateStr) {
 
 const FN_LABEL = { 'S&T':'S&T','IBD':'IBD','AM':'Asset Mgmt','PE':'PE/Alt','RM':'Research','PB':'Pvt. Banking' };
 
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// COMPENSATION
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+// Market-rate estimates by [level][function] — total comp, USD
+const COMP_EST = {
+  'Analyst':   { 'S&T':'$150–220K', 'IBD':'$150–200K', 'AM':'$120–170K', 'RM':'$110–160K', 'QR':'$200–350K', 'PE':'$150–220K', 'PB':'$100–160K' },
+  'Associate': { 'S&T':'$250–400K', 'IBD':'$250–350K', 'AM':'$180–280K', 'RM':'$160–250K', 'QR':'$300–550K', 'PE':'$300–500K', 'PB':'$150–250K' },
+  'VP':        { 'S&T':'$400–700K', 'IBD':'$350–600K', 'AM':'$280–500K', 'RM':'$250–420K', 'QR':'$500–900K', 'PE':'$400–750K', 'PB':'$250–450K' },
+  'Director':  { 'S&T':'$550–950K', 'IBD':'$450–800K', 'AM':'$400–700K', 'RM':'$350–600K', 'QR':'$700–1.2M', 'PE':'$600–1.1M', 'PB':'$350–650K' },
+  'MD':        { 'S&T':'$800K–2M+', 'IBD':'$700K–1.8M', 'AM':'$600K–1.5M', 'RM':'$500K–1.2M', 'QR':'$1M–3M+', 'PE':'$1M–3M+', 'PB':'$500K–1.2M' },
+  'Partner':   { 'S&T':'$1M–4M+', 'IBD':'$1M–3M+', 'AM':'$800K–2.5M+', 'RM':'$700K–2M+', 'QR':'$2M–10M+', 'PE':'$1.5M–5M+', 'PB':'$700K–2M+' },
+};
+
+// Try to extract real salary range from job description text
+function extractSalary(desc) {
+  if (!desc) return null;
+  const t = desc.replace(/,/g, '');
+  // Match patterns like $150,000-$200,000 / $150K-$200K / £300K–£400K / €200K-300K
+  const patterns = [
+    /([£$€])\s*(\d{2,3})[Kk]\s*[-–—to]+\s*[£$€]?\s*(\d{2,3})[Kk]/,
+    /([£$€])\s*(\d{3,4})[Kk]?\s*[-–—to]+\s*[£$€]?\s*(\d{3,4})[Kk]/,
+    /(\d{2,3})[Kk]\s*[-–—to]+\s*(\d{2,3})[Kk]\s*(USD|GBP|EUR)?/,
+    /base\s+(?:salary\s+)?(?:of\s+)?([£$€])\s*(\d{2,3})[Kk]/i,
+    /salary[:\s]+([£$€])\s*(\d{2,3})[Kk]\s*[-–]?\s*[£$€]?\s*(\d{2,3})?[Kk]?/i,
+  ];
+  for (const p of patterns) {
+    const m = t.match(p);
+    if (m) {
+      // Clean up match into readable format
+      const full = m[0].replace(/\s+/g,' ').trim();
+      if (full.length < 30) return full;
+    }
+  }
+  return null;
+}
+
+function getComp(job) {
+  // 1. Use stored comp field (manually entered / featured jobs)
+  if (job.comp) return { val: job.comp, est: false };
+  // 2. Try to extract from description
+  const extracted = extractSalary(job.description);
+  if (extracted) return { val: extracted, est: false };
+  // 3. Fall back to estimate based on level + function
+  if (job.level && job.function && COMP_EST[job.level]?.[job.function]) {
+    return { val: COMP_EST[job.level][job.function], est: true };
+  }
+  return null;
+}
+
 function renderJobs() {
   const list = document.getElementById('job-list');
   const jobs = getFiltered();
@@ -1129,7 +1266,7 @@ function renderJobs() {
     if (url) { card.style.cursor = 'pointer'; card.onclick = () => window.open(url, '_blank'); }
     card.innerHTML = '<div class="job-header">' +
       '<div class="job-title">' + (j.title || '') + '</div>' +
-      (j.comp ? '<div class="job-comp">' + j.comp + '</div>' : '') +
+      (() => { const c = getComp(j); return c ? '<div class="job-comp' + (c.est ? ' comp-est' : '') + '">' + c.val + (c.est ? ' <span class="comp-label">est.</span>' : '') + '</div>' : ''; })() +
       '</div>' +
       '<div class="job-meta">' +
       '<span class="job-firm">' + (j.firm || '') + '</span>' +
@@ -1176,7 +1313,8 @@ function updateStats() {
   const pctSen = total ? Math.round(senior/total*100) : 0;
 
   const fnCounts = {};
-  allJobs.forEach(j => { fnCounts[j.function] = (fnCounts[j.function]||0)+1; });
+  const foJobs = allJobs.filter(j => j.is_front_office === true);
+  foJobs.forEach(j => { if (j.function) fnCounts[j.function] = (fnCounts[j.function]||0)+1; });
   const topFn = Object.entries(fnCounts).sort((a,b)=>b[1]-a[1])[0];
 
   document.getElementById('stat-total').textContent  = total;
@@ -1220,7 +1358,27 @@ function setFilter(type, btn) {
 }
 function setLevel(level) { filterLevel = level; renderJobs(); }
 function setSource(src)  { filterSrc = src; renderJobs(); }
-function setLoc(loc)     { filterLoc = loc; renderJobs(); }
+function setLoc(loc) {
+  filterLoc = loc;
+  // Sync mobile pills
+  document.querySelectorAll('.loc-pill').forEach(p => p.classList.remove('active'));
+  const activePill = document.querySelector(`.loc-pill[onclick*="'${loc}'"]`);
+  if (activePill) activePill.classList.add('active');
+  renderJobs();
+}
+
+function setMobileLoc(loc, el) {
+  filterLoc = loc;
+  document.querySelectorAll('.loc-pill').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  // Sync desktop sidebar
+  document.querySelectorAll('.sidebar-item').forEach(item => {
+    if (item.getAttribute('onclick')?.includes('setLoc')) {
+      item.classList.toggle('active', item.getAttribute('onclick')?.includes(`'${loc}'`));
+    }
+  });
+  renderJobs();
+}
 function setViewMode(mode) {
   viewMode = mode;
   document.getElementById('tab-fo').classList.toggle('active', mode === 'fo');
